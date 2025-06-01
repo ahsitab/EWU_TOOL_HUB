@@ -1,186 +1,204 @@
 document.addEventListener('DOMContentLoaded', function() {
     // CGPA Calculator Functionality (unchanged)
-    const cgpaCalculator = {
-        init: function() {
-            this.cacheElements();
-            this.bindEvents();
-        },
+// CGPA Calculator Functionality (updated for EWU's 4.5 scale)
+const cgpaCalculator = {
+    init: function() {
+        this.cacheElements();
+        this.bindEvents();
+    },
+    
+    cacheElements: function() {
+        this.currentCgpaInput = document.getElementById('current-cgpa');
+        this.completedCreditsInput = document.getElementById('completed-credits');
+        this.coursesContainer = document.getElementById('courses-container');
+        this.addCourseBtn = document.getElementById('add-course');
+        this.calculateBtn = document.getElementById('calculate-cgpa');
+        this.resetBtn = document.getElementById('reset-cgpa');
+        this.printBtn = document.getElementById('print-cgpa');
+        this.semesterGpaDisplay = document.getElementById('semester-gpa');
+        this.newCgpaDisplay = document.getElementById('new-cgpa');
+    },
+    
+    bindEvents: function() {
+        this.addCourseBtn.addEventListener('click', this.addCourse.bind(this));
+        this.calculateBtn.addEventListener('click', this.calculateCgpa.bind(this));
+        this.resetBtn.addEventListener('click', this.resetCalculator.bind(this));
+        this.printBtn.addEventListener('click', this.printResults.bind(this));
         
-        cacheElements: function() {
-            this.currentCgpaInput = document.getElementById('current-cgpa');
-            this.completedCreditsInput = document.getElementById('completed-credits');
-            this.coursesContainer = document.getElementById('courses-container');
-            this.addCourseBtn = document.getElementById('add-course');
-            this.calculateBtn = document.getElementById('calculate-cgpa');
-            this.resetBtn = document.getElementById('reset-cgpa');
-            this.printBtn = document.getElementById('print-cgpa');
-            this.semesterGpaDisplay = document.getElementById('semester-gpa');
-            this.newCgpaDisplay = document.getElementById('new-cgpa');
-        },
+        // Add initial course
+        this.addCourse();
+    },
+    
+    addCourse: function() {
+        const courseRow = document.createElement('div');
+        courseRow.className = 'course-row';
         
-        bindEvents: function() {
-            this.addCourseBtn.addEventListener('click', this.addCourse.bind(this));
-            this.calculateBtn.addEventListener('click', this.calculateCgpa.bind(this));
-            this.resetBtn.addEventListener('click', this.resetCalculator.bind(this));
-            this.printBtn.addEventListener('click', this.printResults.bind(this));
-            
-            // Add initial course
-            this.addCourse();
-        },
+        const gradeSelect = document.createElement('select');
+        gradeSelect.className = 'course-grade';
+        gradeSelect.innerHTML = `
+            <option value="">Select Grade</option>
+            <option value="4.0">A+ (4.0)</option>
+            <option value="3.75">A (3.75)</option>
+            <option value="3.5">A- (3.5)</option>
+            <option value="3.25">B+ (3.25)</option>
+            <option value="3.0">B (3.0)</option>
+            <option value="2.75">B- (2.75)</option>
+            <option value="2.5">C+ (2.5)</option>
+            <option value="2.25">C (2.25)</option>
+            <option value="2.0">D (2.0)</option>
+            <option value="0.0">F (0.0)</option>
+        `;
         
-        addCourse: function() {
-            const courseRow = document.createElement('div');
-            courseRow.className = 'course-row';
-            
-            const gradeSelect = document.createElement('select');
-            gradeSelect.className = 'course-grade';
-            gradeSelect.innerHTML = `
-                <option value="">Select Grade</option>
-                <option value="4.0">A+</option>
-                <option value="3.75">A</option>
-                <option value="3.5">A-</option>
-                <option value="3.25">B+</option>
-                <option value="3.0">B</option>
-                <option value="2.7">B-</option>
-                <option value="2.3">C+</option>
-                <option value="2.0">C</option>
-                <option value="1.7">C-</option>
-                <option value="1.3">D+</option>
-                <option value="1.0">D</option>
-                <option value="0.0">F</option>
-            `;
-            
-            const creditInput = document.createElement('input');
-            creditInput.type = 'number';
-            creditInput.className = 'course-credit';
-            creditInput.min = '1';
-            creditInput.max = '4';
-            creditInput.placeholder = 'Credits';
-            creditInput.value = '3';
-            
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'remove-course';
-            removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
-            removeBtn.addEventListener('click', function() {
-                if (document.querySelectorAll('.course-row').length > 1) {
-                    courseRow.remove();
-                } else {
-                    alert('You need at least one course');
-                }
-            });
-            
-            courseRow.appendChild(gradeSelect);
-            courseRow.appendChild(creditInput);
-            courseRow.appendChild(removeBtn);
-            
-            this.coursesContainer.appendChild(courseRow);
-        },
+        const creditInput = document.createElement('input');
+        creditInput.type = 'number';
+        creditInput.className = 'course-credit';
+        creditInput.min = '0.5';
+        creditInput.max = '4.5';
+        creditInput.step = '0.5';
+        creditInput.placeholder = 'Credits';
+        creditInput.value = '3';
         
-        calculateCgpa: function() {
-            const currentCgpa = parseFloat(this.currentCgpaInput.value) || 0;
-            const completedCredits = parseInt(this.completedCreditsInput.value) || 0;
-            
-            let totalGradePoints = 0;
-            let totalCredits = 0;
-            let allValid = true;
-            
-            document.querySelectorAll('.course-row').forEach(row => {
-                const grade = parseFloat(row.querySelector('.course-grade').value);
-                const credits = parseFloat(row.querySelector('.course-credit').value);
-                
-                if (isNaN(grade) || isNaN(credits)) {
-                    allValid = false;
-                    return;
-                }
-                
-                totalGradePoints += grade * credits;
-                totalCredits += credits;
-            });
-            
-            if (!allValid) {
-                alert('Please fill all grade and credit fields');
-                return;
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-course';
+        removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
+        removeBtn.addEventListener('click', function() {
+            if (document.querySelectorAll('.course-row').length > 1) {
+                courseRow.remove();
+            } else {
+                alert('You need at least one course');
             }
-            
-            if (totalCredits === 0) {
-                alert('Please add at least one course');
-                return;
-            }
-            
-            const semesterGpa = totalGradePoints / totalCredits;
-            let newCgpa = semesterGpa;
-            
-            if (completedCredits > 0) {
-                const totalGradePointsBefore = currentCgpa * completedCredits;
-                newCgpa = (totalGradePointsBefore + totalGradePoints) / (completedCredits + totalCredits);
-            }
-            
-            this.semesterGpaDisplay.textContent = semesterGpa.toFixed(2);
-            this.newCgpaDisplay.textContent = newCgpa.toFixed(2);
-        },
+        });
         
-        resetCalculator: function() {
-            this.currentCgpaInput.value = '';
-            this.completedCreditsInput.value = '';
-            this.semesterGpaDisplay.textContent = '-';
-            this.newCgpaDisplay.textContent = '-';
-            
-            // Remove all but one course row
-            const rows = document.querySelectorAll('.course-row');
-            for (let i = 1; i < rows.length; i++) {
-                rows[i].remove();
-            }
-            
-            // Reset the first row
-            const firstRow = rows[0];
-            firstRow.querySelector('.course-grade').value = '';
-            firstRow.querySelector('.course-credit').value = '3';
-        },
+        courseRow.appendChild(gradeSelect);
+        courseRow.appendChild(creditInput);
+        courseRow.appendChild(removeBtn);
         
-        printResults: function() {
-            const printContent = `
-                <h2>EWU CGPA Calculation Result</h2>
-                <p><strong>Current CGPA:</strong> ${this.currentCgpaInput.value || 'N/A'}</p>
-                <p><strong>Completed Credits:</strong> ${this.completedCreditsInput.value || '0'}</p>
-                <h3>Current Semester Courses</h3>
-                <ul>
-                    ${Array.from(document.querySelectorAll('.course-row')).map(row => {
-                        const grade = row.querySelector('.course-grade').value;
-                        const credits = row.querySelector('.course-credit').value;
-                        return `<li>Grade: ${grade || 'Not selected'}, Credits: ${credits}</li>`;
-                    }).join('')}
-                </ul>
-                <h3>Results</h3>
-                <p><strong>Semester GPA:</strong> ${this.semesterGpaDisplay.textContent}</p>
-                <p><strong>New CGPA:</strong> ${this.newCgpaDisplay.textContent}</p>
-                <p>Generated on ${new Date().toLocaleString()}</p>
-            `;
-            
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>EWU CGPA Result</title>
-                        <style>
-                            body { font-family: Arial, sans-serif; padding: 20px; }
-                            h2, h3 { color: #0056b3; }
-                            ul { margin-left: 20px; }
-                        </style>
-                    </head>
-                    <body>
-                        ${printContent}
-                        <script>
-                            window.onload = function() {
-                                window.print();
-                                setTimeout(function() { window.close(); }, 1000);
-                            };
-                        </script>
-                    </body>
-                </html>
-            `);
-            printWindow.document.close();
+        this.coursesContainer.appendChild(courseRow);
+    },
+    
+    calculateCgpa: function() {
+        const currentCgpa = parseFloat(this.currentCgpaInput.value) || 0;
+        const completedCredits = parseFloat(this.completedCreditsInput.value) || 0;
+        
+        // Validate current CGPA (0 to 4.5)
+        if (currentCgpa < 0 || currentCgpa > 4.5) {
+            alert('Current CGPA must be between 0 and 4.5');
+            return;
         }
-    };
+        
+        let totalGradePoints = 0;
+        let totalCredits = 0;
+        let allValid = true;
+        
+        document.querySelectorAll('.course-row').forEach(row => {
+            const grade = parseFloat(row.querySelector('.course-grade').value);
+            const credits = parseFloat(row.querySelector('.course-credit').value);
+            
+            if (isNaN(grade) || isNaN(credits)) {
+                allValid = false;
+                return;
+            }
+            
+            // Validate credits (0.5 to 4.5)
+            if (credits < 0.5 || credits > 4.5) {
+                alert('Credits must be between 0.5 and 4.5');
+                allValid = false;
+                return;
+            }
+            
+            totalGradePoints += grade * credits;
+            totalCredits += credits;
+        });
+        
+        if (!allValid) {
+            alert('Please fill all grade and credit fields with valid values');
+            return;
+        }
+        
+        if (totalCredits === 0) {
+            alert('Please add at least one course');
+            return;
+        }
+        
+        const semesterGpa = totalGradePoints / totalCredits;
+        let newCgpa = semesterGpa;
+        
+        if (completedCredits > 0) {
+            const totalGradePointsBefore = currentCgpa * completedCredits;
+            newCgpa = (totalGradePointsBefore + totalGradePoints) / (completedCredits + totalCredits);
+        }
+        
+        // Cap the CGPA at 4.5
+        newCgpa = Math.min(newCgpa, 4.5);
+        
+        this.semesterGpaDisplay.textContent = semesterGpa.toFixed(2);
+        this.newCgpaDisplay.textContent = newCgpa.toFixed(2);
+    },
+    
+    resetCalculator: function() {
+        this.currentCgpaInput.value = '';
+        this.completedCreditsInput.value = '';
+        this.semesterGpaDisplay.textContent = '-';
+        this.newCgpaDisplay.textContent = '-';
+        
+        // Remove all but one course row
+        const rows = document.querySelectorAll('.course-row');
+        for (let i = 1; i < rows.length; i++) {
+            rows[i].remove();
+        }
+        
+        // Reset the first row
+        const firstRow = rows[0];
+        firstRow.querySelector('.course-grade').value = '';
+        firstRow.querySelector('.course-credit').value = '3';
+    },
+    
+    printResults: function() {
+        const printContent = `
+            <h2>EWU CGPA Calculation Result</h2>
+            <p><strong>Current CGPA:</strong> ${this.currentCgpaInput.value || 'N/A'}</p>
+            <p><strong>Completed Credits:</strong> ${this.completedCreditsInput.value || '0'}</p>
+            <h3>Current Semester Courses</h3>
+            <ul>
+                ${Array.from(document.querySelectorAll('.course-row')).map(row => {
+                    const grade = row.querySelector('.course-grade').value;
+                    const credits = row.querySelector('.course-credit').value;
+                    return `<li>Grade: ${grade || 'Not selected'}, Credits: ${credits}</li>`;
+                }).join('')}
+            </ul>
+            <h3>Results</h3>
+            <p><strong>Semester GPA:</strong> ${this.semesterGpaDisplay.textContent}</p>
+            <p><strong>New CGPA:</strong> ${this.newCgpaDisplay.textContent}</p>
+            <p>Generated on ${new Date().toLocaleString()}</p>
+            <p><small>Note: EWU follows a 4.5 grading scale (A+ = 4.0, A = 3.75, A- = 3.5, B+ = 3.25, B = 3.0, B- = 2.75, C+ = 2.5, C = 2.25, D = 2.0, F = 0.0)</small></p>
+        `;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>EWU CGPA Result</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h2, h3 { color: #0056b3; }
+                        ul { margin-left: 20px; }
+                        small { font-size: 0.8em; color: #666; }
+                    </style>
+                </head>
+                <body>
+                    ${printContent}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(function() { window.close(); }, 1000);
+                        };
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+};
 
     // Course Flow Charts Functionality (unchanged)
     const flowCharts = {
