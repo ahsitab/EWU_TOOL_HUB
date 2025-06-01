@@ -449,7 +449,6 @@ loadSampleData: function() {
     };
     
     // Routine Generator Functionality
-// Routine Generator Functionality
 const routineGenerator = {
     courses: [],
     init: function() {
@@ -495,12 +494,10 @@ const routineGenerator = {
             if (this.courseTypeInput.value === 'lab') {
                 this.theorySessionsContainer.style.display = 'none';
                 this.labSessionContainer.style.display = 'block';
-                // Set default lab duration to 3 hours
                 this.labDuration.value = '3';
             } else {
                 this.theorySessionsContainer.style.display = 'block';
                 this.labSessionContainer.style.display = 'none';
-                // Reset theory durations to 1.5 hours
                 this.theoryDurations[0].value = '1.5';
                 this.theoryDurations[1].value = '1.5';
             }
@@ -514,16 +511,13 @@ const routineGenerator = {
         const faculty = this.facultyInput.value.trim();
         const room = this.roomInput.value.trim();
         
-        // Validate inputs
         if (!code || !title || !faculty) {
             this.showToast('Please fill all required fields', 'error');
             return;
         }
         
-        // Get class sessions based on course type
         const sessions = [];
         if (type === 'lab') {
-            // For lab courses, only get the single lab session
             const day = this.labDay.value;
             const time = this.labTime.value;
             const duration = parseFloat(this.labDuration.value);
@@ -540,15 +534,12 @@ const routineGenerator = {
                 isLab: true
             });
         } else {
-            // For theory courses, get both sessions
             for (let i = 0; i < this.theoryDays.length; i++) {
                 const day = this.theoryDays[i].value;
                 const time = this.theoryTimes[i].value;
                 const duration = parseFloat(this.theoryDurations[i].value);
                 
-                if (!day || !time || isNaN(duration)) {
-                    continue;
-                }
+                if (!day || !time || isNaN(duration)) continue;
                 
                 sessions.push({
                     day,
@@ -564,9 +555,8 @@ const routineGenerator = {
             }
         }
         
-        // Create course object
         const course = {
-            id: Date.now(), // Unique ID
+            id: Date.now(),
             code,
             title,
             type,
@@ -594,7 +584,6 @@ const routineGenerator = {
             courseItem.className = 'course-item';
             courseItem.dataset.id = course.id;
             
-            // Format sessions text
             const sessionsText = course.sessions.map(session => {
                 return `${session.day} at ${session.time} (${session.duration}hr${session.isLab ? ' lab' : ''})`;
             }).join(', ');
@@ -618,7 +607,6 @@ const routineGenerator = {
                 </div>
             `;
             
-            // Add event listeners
             courseItem.querySelector('.delete-btn').addEventListener('click', () => {
                 this.deleteCourse(course.id);
             });
@@ -641,19 +629,16 @@ const routineGenerator = {
         const course = this.courses.find(c => c.id === id);
         if (!course) return;
         
-        // Fill form with course data
         this.courseCodeInput.value = course.code;
         this.courseTitleInput.value = course.title;
         this.courseTypeInput.value = course.type;
         this.facultyInput.value = course.faculty;
         this.roomInput.value = course.room || '';
         
-        // Set the appropriate session container
         if (course.type === 'lab') {
             this.theorySessionsContainer.style.display = 'none';
             this.labSessionContainer.style.display = 'block';
             
-            // Fill lab session
             const session = course.sessions[0];
             this.labDay.value = session.day;
             this.labTime.value = session.time;
@@ -662,7 +647,6 @@ const routineGenerator = {
             this.theorySessionsContainer.style.display = 'block';
             this.labSessionContainer.style.display = 'none';
             
-            // Fill theory sessions
             for (let i = 0; i < course.sessions.length && i < 2; i++) {
                 const session = course.sessions[i];
                 this.theoryDays[i].value = session.day;
@@ -671,10 +655,7 @@ const routineGenerator = {
             }
         }
         
-        // Remove the course being edited
         this.deleteCourse(id);
-        
-        // Scroll to form
         this.courseCodeInput.focus();
     },
     
@@ -685,7 +666,6 @@ const routineGenerator = {
         this.facultyInput.value = '';
         this.roomInput.value = '';
         
-        // Reset theory sessions to default values
         this.theorySessionsContainer.style.display = 'block';
         this.labSessionContainer.style.display = 'none';
         
@@ -697,7 +677,6 @@ const routineGenerator = {
         this.theoryTimes[1].value = '09:30';
         this.theoryDurations[1].value = '1.5';
         
-        // Reset lab session to default values
         this.labDay.value = 'Sunday';
         this.labTime.value = '08:00';
         this.labDuration.value = '3';
@@ -711,44 +690,66 @@ const routineGenerator = {
             return;
         }
         
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
-        const timeSlots = this.generateTimeSlots();
+        const days = [
+            { name: 'Sunday', abbr: 'S' },
+            { name: 'Monday', abbr: 'M' },
+            { name: 'Tuesday', abbr: 'T' },
+            { name: 'Wednesday', abbr: 'W' },
+            { name: 'Thursday', abbr: 'R' }
+        ];
+        
+        const timeSlots = [
+            { start: '8:00', end: '10:50', label: '8:00 - 10:50' },
+            { start: '11:00', end: '11:50', label: '11:00 - 11:50' },
+            { start: '11:50', end: '13:20', label: '11:50 - 01:20' },
+            { start: '13:30', end: '15:30', label: '1:30 – 3:30' },
+            { start: '15:10', end: '16:40', label: '3:10 – 4:40' },
+            { start: '16:50', end: '18:50', label: '4:50 – 6:50' }
+        ];
         
         let html = `
             <div class="routine-table-container">
                 <table class="routine-table">
                     <thead>
                         <tr>
-                            <th class="time-col">Time</th>
-                            ${days.map(day => `<th>${day}</th>`).join('')}
+                            <th class="day-col">Days</th>
+                            ${timeSlots.map(slot => `<th>${slot.label}</th>`).join('')}
                         </tr>
                     </thead>
                     <tbody>
         `;
         
-        timeSlots.forEach(timeSlot => {
-            html += `<tr><td class="time-col">${timeSlot}</td>`;
+        days.forEach(day => {
+            html += `<tr><td class="day-col">${day.name}(${day.abbr})</td>`;
             
-            days.forEach(day => {
-                const coursesAtThisTime = this.getCoursesAtTime(day, timeSlot);
+            timeSlots.forEach(slot => {
+                const coursesAtThisTime = this.getCoursesAtTime(day.name, slot.start, slot.end);
                 
                 if (coursesAtThisTime.length > 0) {
-                    const course = coursesAtThisTime[0]; // Show first course if multiple
-                    const isLab = course.type === 'lab';
-                    const session = course.sessions.find(s => s.day === day);
-                    const endTime = this.calculateEndTime(session);
+                    const course = coursesAtThisTime[0];
+                    const session = course.sessions.find(s => 
+                        s.day.includes(day.name) && 
+                        this.isTimeBetween(s.time, slot.start, slot.end)
+                    );
                     
-                    html += `
-                        <td class="course-slot" rowspan="${this.getRowSpan(session)}">
-                            <div class="course-block ${isLab ? 'lab-block' : ''}">
-                                <div class="course-code">${course.code}</div>
-                                <div class="course-time">${session.time}-${endTime}</div>
-                                <div class="course-faculty">${course.faculty}</div>
-                                ${course.room ? `<div class="course-room">${course.room}</div>` : ''}
-                            </div>
-                        </td>
-                    `;
-                } else if (!this.isCellOccupied(day, timeSlot)) {
+                    if (session) {
+                        const isLab = course.type === 'lab';
+                        const roomPrefix = isLab ? 'Lab' : 'R';
+                        const sectionInfo = isLab ? 'Lab' : course.sessions.length;
+                        
+                        html += `
+                            <td class="course-slot">
+                                <div class="course-block ${isLab ? 'lab-block' : ''}">
+                                    <div class="course-code">${course.code} (${sectionInfo})</div>
+                                    <div class="course-room">${roomPrefix}: ${course.room}</div>
+                                    ${course.faculty ? `<div class="course-faculty">${course.faculty}</div>` : ''}
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        html += '<td></td>';
+                    }
+                } else {
                     html += '<td></td>';
                 }
             });
@@ -767,90 +768,26 @@ const routineGenerator = {
         this.showToast('Routine generated successfully!', 'success');
     },
     
-    getCoursesAtTime: function(day, timeSlot) {
+    getCoursesAtTime: function(day, startTime, endTime) {
         return this.courses.filter(course => {
             return course.sessions.some(session => {
-                return session.day === day && 
-                       this.isTimeBetween(timeSlot, session.time, session.duration);
+                return session.day.includes(day) && 
+                       this.isTimeBetween(session.time, startTime, endTime);
             });
         });
     },
     
-    isTimeBetween: function(time, startTime, duration) {
-        const timeInMinutes = this.timeToMinutes(time);
-        const startInMinutes = this.timeToMinutes(startTime);
-        const endInMinutes = startInMinutes + (duration * 60);
+    isTimeBetween: function(sessionTime, slotStart, slotEnd) {
+        const sessionMinutes = this.timeToMinutes(sessionTime);
+        const slotStartMinutes = this.timeToMinutes(slotStart);
+        const slotEndMinutes = this.timeToMinutes(slotEnd);
         
-        return timeInMinutes >= startInMinutes && timeInMinutes < endInMinutes;
-    },
-    
-    calculateEndTime: function(session) {
-        const startInMinutes = this.timeToMinutes(session.time);
-        const endInMinutes = startInMinutes + (session.duration * 60);
-        return this.minutesToTime(endInMinutes);
-    },
-    
-    getRowSpan: function(session) {
-        if (!session) return 1;
-        // Calculate how many 30-minute slots this session spans
-        return Math.ceil(session.duration * 2);
-    },
-    
-    isCellOccupied: function(day, timeSlot) {
-        // Check if this cell is already occupied by a rowspan from above
-        const table = this.routineDisplay.querySelector('table');
-        if (!table) return false;
-        
-        const rows = table.querySelectorAll('tr');
-        const timeColIndex = 0;
-        const dayIndex = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].indexOf(day) + 1;
-        
-        for (let i = 0; i < rows.length; i++) {
-            const cells = rows[i].cells;
-            if (cells.length <= dayIndex) continue;
-            
-            const rowTime = cells[timeColIndex].textContent;
-            if (rowTime === timeSlot) {
-                // This is our row, cell can't be occupied yet
-                return false;
-            }
-            
-            const cell = cells[dayIndex];
-            if (cell.rowSpan > 1) {
-                const cellStartTime = this.timeToMinutes(rowTime);
-                const cellEndTime = cellStartTime + (cell.rowSpan * 30);
-                const currentTime = this.timeToMinutes(timeSlot);
-                
-                if (currentTime >= cellStartTime && currentTime < cellEndTime) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    },
-    
-    generateTimeSlots: function() {
-        // Generate time slots from 8:00 AM to 6:00 PM in 30-minute increments
-        const slots = [];
-        for (let hour = 8; hour <= 18; hour++) {
-            for (let minute = 0; minute < 60; minute += 30) {
-                const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-                slots.push(timeString);
-            }
-        }
-        return slots;
+        return sessionMinutes >= slotStartMinutes && sessionMinutes < slotEndMinutes;
     },
     
     timeToMinutes: function(timeString) {
         const [hours, minutes] = timeString.split(':').map(Number);
         return hours * 60 + minutes;
-    },
-    
-    minutesToTime: function(totalMinutes) {
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     },
     
     printRoutine: function() {
@@ -861,32 +798,30 @@ const routineGenerator = {
             <!DOCTYPE html>
             <html>
                 <head>
-                    <title>EWU Class Routine</title>
+                    <title>Class Routine</title>
                     <style>
                         body { font-family: Arial, sans-serif; }
-                        .routine-table { width: 100%; border-collapse: collapse; }
+                        .routine-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
                         .routine-table th, .routine-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
                         .routine-table th { background-color: #0056b3; color: white; }
-                        .routine-table .time-col { background-color: #f1f1f1; font-weight: bold; }
+                        .routine-table .day-col { background-color: #f1f1f1; font-weight: bold; width: 100px; }
                         .course-block { background-color: #e7f5ff; border-radius: 4px; padding: 5px; margin: 2px; }
                         .lab-block { background-color: #fff3bf; }
                         .course-code { font-weight: bold; font-size: 0.9rem; }
-                        .course-time { font-size: 0.8rem; color: #495057; }
+                        .course-room { font-size: 0.8rem; }
                         .course-faculty { font-size: 0.8rem; font-style: italic; }
-                        .course-room { font-size: 0.8rem; color: #868e96; }
-                        h1 { color: #0056b3; text-align: center; }
-                        .print-header { text-align: center; margin-bottom: 20px; }
+                        h1 { color: #0056b3; text-align: center; margin-bottom: 5px; }
+                        .print-header { margin-bottom: 20px; }
                         .print-footer { text-align: center; margin-top: 20px; font-size: 0.8rem; color: #666; }
                     </style>
                 </head>
                 <body>
                     <div class="print-header">
-                        <h1>East West University</h1>
-                        <h2>Class Routine</h2>
+                        <h1>Class Routine and Office Hour, Spring 2025</h1>
                     </div>
                     ${printContent}
                     <div class="print-footer">
-                        Generated on ${new Date().toLocaleDateString()} | EWU Tools Hub
+                        Generated on ${new Date().toLocaleDateString()}
                     </div>
                     <script>
                         window.onload = function() {
@@ -923,19 +858,26 @@ const routineGenerator = {
         
         document.body.appendChild(toast);
         
-        // Auto-remove after 3 seconds
         setTimeout(() => {
             toast.classList.add('fade-out');
             setTimeout(() => toast.remove(), 300);
         }, 3000);
         
-        // Manual close
         toast.querySelector('.toast-close').addEventListener('click', () => {
             toast.classList.add('fade-out');
             setTimeout(() => toast.remove(), 300);
         });
     }
 };
+
+document.addEventListener('DOMContentLoaded', function() {
+    routineGenerator.init();
+});
+
+// Initialize the routine generator when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    routineGenerator.init();
+});
     
     // Initialize all components
     cgpaCalculator.init();
