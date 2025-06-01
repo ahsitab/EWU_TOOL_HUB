@@ -119,63 +119,110 @@
         </section>
 
         <!-- Tuition Fee Calculator Section -->
-        <section id="fee-calculator" class="tool-section">
-            <h2><i class="fas fa-money-bill-wave"></i> Tuition Fee Calculator</h2>
-            <div class="calculator-container">
-                <div class="input-section">
+<!-- Updated Tuition Fee Calculator Section -->
+<section id="fee-calculator" class="tool-section">
+    <h2><i class="fas fa-money-bill-wave"></i> Tuition Fee Calculator</h2>
+    <div class="calculator-container">
+        <div class="input-section">
+            <div class="form-group">
+                <label for="fee-department">Department:</label>
+                <select id="fee-department">
+                    <option value="">Select Department</option>
+                    <option value="cse">Computer Science & Engineering (CSE)</option>
+                    <option value="eee">Electrical & Electronic Engineering (EEE)</option>
+                    <option value="bba">Business Administration (BBA)</option>
+                    <option value="eco">Economics</option>
+                    <option value="eng">English</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="semester-type">Semester Type:</label>
+                <select id="semester-type">
+                    <option value="regular">Regular</option>
+                    <option value="summer">Summer</option>
+                </select>
+            </div>
+            
+            <h3>Add Courses</h3>
+            <div id="fee-courses-container">
+                <div class="course-fee-row">
                     <div class="form-group">
-                        <label for="fee-department">Department:</label>
-                        <select id="fee-department">
-                            <option value="">Select Department</option>
-                            <option value="cse">CSE</option>
-                            <option value="eee">EEE</option>
-                            <option value="bba">BBA</option>
-                            <option value="eco">Economics</option>
-                            <option value="eng">English</option>
-                        </select>
+                        <label>Course Code:</label>
+                        <input type="text" class="course-code" placeholder="e.g., CSE101">
                     </div>
                     <div class="form-group">
-                        <label for="semester-type">Semester Type:</label>
-                        <select id="semester-type">
-                            <option value="regular">Regular</option>
-                            <option value="summer">Summer</option>
-                        </select>
+                        <label>Credits:</label>
+                        <input type="number" class="course-credit" min="1" max="4" value="3">
                     </div>
                     <div class="form-group">
-                        <label for="credit-hours">Credit Hours:</label>
-                        <input type="number" id="credit-hours" min="1" max="21" value="15">
+                        <label>Per Credit Fee:</label>
+                        <input type="number" class="course-per-credit" min="0" placeholder="Auto from dept">
                     </div>
-                    <div class="form-group">
-                        <label for="scholarship">Scholarship (%):</label>
-                        <input type="number" id="scholarship" min="0" max="100" value="0">
-                    </div>
-                    <button id="calculate-fee" class="btn calculate-btn">Calculate Fees</button>
-                </div>
-                
-                <div class="result-section">
-                    <h3>Fee Breakdown</h3>
-                    <div class="result-box">
-                        <div class="result-item">
-                            <span>Tuition Fee:</span>
-                            <span id="tuition-fee">-</span>
-                        </div>
-                        <div class="result-item">
-                            <span>Other Fees:</span>
-                            <span id="other-fees">-</span>
-                        </div>
-                        <div class="result-item">
-                            <span>Scholarship:</span>
-                            <span id="scholarship-amount">-</span>
-                        </div>
-                        <div class="result-item total">
-                            <span>Total Payable:</span>
-                            <span id="total-fee">-</span>
-                        </div>
-                    </div>
-                    <button id="reset-fee" class="btn reset-btn"><i class="fas fa-redo"></i> Reset</button>
+                    <button class="remove-course-fee"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
-        </section>
+            <button id="add-course-fee" class="btn"><i class="fas fa-plus"></i> Add Course</button>
+            
+            <h3>Other Fees</h3>
+            <div class="form-group">
+                <label for="registration-fee">Registration Fee:</label>
+                <input type="number" id="registration-fee" min="0" value="5000">
+            </div>
+            <div class="form-group">
+                <label for="library-fee">Library Fee:</label>
+                <input type="number" id="library-fee" min="0" value="2000">
+            </div>
+            <div class="form-group">
+                <label for="activity-fee">Activity Fee:</label>
+                <input type="number" id="activity-fee" min="0" value="1500">
+            </div>
+            
+            <div class="form-group">
+                <label for="scholarship">Scholarship (%):</label>
+                <input type="number" id="scholarship" min="0" max="100" value="0">
+            </div>
+            
+            <button id="calculate-fee" class="btn calculate-btn">Calculate Total Fees</button>
+        </div>
+        
+        <div class="result-section">
+            <h3>Fee Breakdown</h3>
+            <div class="result-box">
+                <div class="result-item">
+                    <span>Total Credits:</span>
+                    <span id="total-credits">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Total Tuition Fee:</span>
+                    <span id="tuition-fee">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Other Fees:</span>
+                    <span id="other-fees">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Scholarship:</span>
+                    <span id="scholarship-amount">-</span>
+                </div>
+                <div class="result-item total">
+                    <span>Total Payable:</span>
+                    <span id="total-fee">-</span>
+                </div>
+            </div>
+            
+            <div class="course-fee-list">
+                <h4>Course Details</h4>
+                <div id="course-fee-details">
+                    <!-- Course details will be shown here -->
+                </div>
+            </div>
+            
+            <button id="reset-fee" class="btn reset-btn"><i class="fas fa-redo"></i> Reset</button>
+            <button id="print-fee" class="btn print-btn"><i class="fas fa-print"></i> Print</button>
+        </div>
+    </div>
+</section>
 
         <!-- Routine Generator Section -->
   <!-- Routine Generator Section -->

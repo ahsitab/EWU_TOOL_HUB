@@ -353,100 +353,320 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Tuition Fee Calculator Functionality (unchanged)
-    const feeCalculator = {
-        init: function() {
-            this.cacheElements();
-            this.bindEvents();
-            this.loadFeeStructure();
-        },
+const feeCalculator = {
+    init: function() {
+        this.cacheElements();
+        this.bindEvents();
+        this.loadFeeStructure();
+    },
+    
+    cacheElements: function() {
+        this.departmentSelect = document.getElementById('fee-department');
+        this.semesterTypeSelect = document.getElementById('semester-type');
+        this.coursesContainer = document.getElementById('fee-courses-container');
+        this.addCourseBtn = document.getElementById('add-course-fee');
+        this.registrationFeeInput = document.getElementById('registration-fee');
+        this.libraryFeeInput = document.getElementById('library-fee');
+        this.activityFeeInput = document.getElementById('activity-fee');
+        this.scholarshipInput = document.getElementById('scholarship');
+        this.calculateBtn = document.getElementById('calculate-fee');
+        this.resetBtn = document.getElementById('reset-fee');
+        this.printBtn = document.getElementById('print-fee');
         
-        cacheElements: function() {
-            this.departmentSelect = document.getElementById('fee-department');
-            this.semesterTypeSelect = document.getElementById('semester-type');
-            this.creditHoursInput = document.getElementById('credit-hours');
-            this.scholarshipInput = document.getElementById('scholarship');
-            this.calculateBtn = document.getElementById('calculate-fee');
-            this.resetBtn = document.getElementById('reset-fee');
-            this.tuitionFeeDisplay = document.getElementById('tuition-fee');
-            this.otherFeesDisplay = document.getElementById('other-fees');
-            this.scholarshipDisplay = document.getElementById('scholarship-amount');
-            this.totalFeeDisplay = document.getElementById('total-fee');
-        },
+        // Result displays
+        this.totalCreditsDisplay = document.getElementById('total-credits');
+        this.tuitionFeeDisplay = document.getElementById('tuition-fee');
+        this.otherFeesDisplay = document.getElementById('other-fees');
+        this.scholarshipDisplay = document.getElementById('scholarship-amount');
+        this.totalFeeDisplay = document.getElementById('total-fee');
+        this.courseFeeDetails = document.getElementById('course-fee-details');
+    },
+    
+    bindEvents: function() {
+        this.addCourseBtn.addEventListener('click', this.addCourse.bind(this));
+        this.calculateBtn.addEventListener('click', this.calculateFees.bind(this));
+        this.resetBtn.addEventListener('click', this.resetCalculator.bind(this));
+        this.printBtn.addEventListener('click', this.printFeeDetails.bind(this));
         
-        bindEvents: function() {
-            this.calculateBtn.addEventListener('click', this.calculateFees.bind(this));
-            this.resetBtn.addEventListener('click', this.resetCalculator.bind(this));
-        },
-        
-        loadFeeStructure: function() {
-            this.feeStructure = {
-                cse: {
-                    regular: { perCredit: 4500, otherFees: 12000 },
-                    summer: { perCredit: 3500, otherFees: 8000 }
-                },
-                eee: {
-                    regular: { perCredit: 4000, otherFees: 11000 },
-                    summer: { perCredit: 3000, otherFees: 7000 }
-                },
-                bba: {
-                    regular: { perCredit: 3500, otherFees: 9000 },
-                    summer: { perCredit: 2500, otherFees: 6000 }
-                },
-                eco: {
-                    regular: { perCredit: 3000, otherFees: 8000 },
-                    summer: { perCredit: 2000, otherFees: 5000 }
-                },
-                eng: {
-                    regular: { perCredit: 3000, otherFees: 8000 },
-                    summer: { perCredit: 2000, otherFees: 5000 }
-                }
-            };
-        },
-        
-        calculateFees: function() {
-            const department = this.departmentSelect.value;
-            const semesterType = this.semesterTypeSelect.value;
-            const creditHours = parseInt(this.creditHoursInput.value) || 0;
-            const scholarship = parseInt(this.scholarshipInput.value) || 0;
-            
-            if (!department) {
-                alert('Please select your department');
-                return;
+        // Auto-fill per credit fee when department changes
+        this.departmentSelect.addEventListener('change', this.updatePerCreditFees.bind(this));
+        this.semesterTypeSelect.addEventListener('change', this.updatePerCreditFees.bind(this));
+    },
+    
+    loadFeeStructure: function() {
+        this.feeStructure = {
+            cse: {
+                regular: { perCredit: 4500, otherFees: 12000 },
+                summer: { perCredit: 3500, otherFees: 8000 }
+            },
+            eee: {
+                regular: { perCredit: 4000, otherFees: 11000 },
+                summer: { perCredit: 3000, otherFees: 7000 }
+            },
+            bba: {
+                regular: { perCredit: 3500, otherFees: 9000 },
+                summer: { perCredit: 2500, otherFees: 6000 }
+            },
+            eco: {
+                regular: { perCredit: 3000, otherFees: 8000 },
+                summer: { perCredit: 2000, otherFees: 5000 }
+            },
+            eng: {
+                regular: { perCredit: 3000, otherFees: 8000 },
+                summer: { perCredit: 2000, otherFees: 5000 }
             }
-            
-            if (creditHours < 1 || creditHours > 21) {
-                alert('Credit hours must be between 1 and 21');
-                return;
-            }
-            
-            if (scholarship < 0 || scholarship > 100) {
-                alert('Scholarship must be between 0 and 100');
-                return;
-            }
-            
-            const feeInfo = this.feeStructure[department][semesterType];
-            const tuitionFee = feeInfo.perCredit * creditHours;
-            const otherFees = feeInfo.otherFees;
-            const scholarshipAmount = (tuitionFee * scholarship) / 100;
-            const totalFee = (tuitionFee + otherFees) - scholarshipAmount;
-            
-            this.tuitionFeeDisplay.textContent = `${tuitionFee.toLocaleString()} BDT`;
-            this.otherFeesDisplay.textContent = `${otherFees.toLocaleString()} BDT`;
-            this.scholarshipDisplay.textContent = `${scholarshipAmount.toLocaleString()} BDT (${scholarship}%)`;
-            this.totalFeeDisplay.textContent = `${totalFee.toLocaleString()} BDT`;
-        },
+        };
+    },
+    
+    addCourse: function() {
+        const courseRow = document.createElement('div');
+        courseRow.className = 'course-fee-row';
         
-        resetCalculator: function() {
-            this.departmentSelect.value = '';
-            this.semesterTypeSelect.value = 'regular';
-            this.creditHoursInput.value = '15';
-            this.scholarshipInput.value = '0';
-            this.tuitionFeeDisplay.textContent = '-';
-            this.otherFeesDisplay.textContent = '-';
-            this.scholarshipDisplay.textContent = '-';
-            this.totalFeeDisplay.textContent = '-';
+        courseRow.innerHTML = `
+            <div class="form-group">
+                <label>Course Code:</label>
+                <input type="text" class="course-code" placeholder="e.g., CSE101">
+            </div>
+            <div class="form-group">
+                <label>Credits:</label>
+                <input type="number" class="course-credit" min="1" max="4" value="3">
+            </div>
+            <div class="form-group">
+                <label>Per Credit Fee:</label>
+                <input type="number" class="course-per-credit" min="0" placeholder="Auto from dept">
+            </div>
+            <button class="remove-course-fee"><i class="fas fa-trash"></i></button>
+        `;
+        
+        // Set default per credit fee if department is selected
+        const department = this.departmentSelect.value;
+        const semesterType = this.semesterTypeSelect.value;
+        if (department && semesterType) {
+            const perCredit = this.feeStructure[department][semesterType].perCredit;
+            courseRow.querySelector('.course-per-credit').value = perCredit;
         }
-    };
+        
+        courseRow.querySelector('.remove-course-fee').addEventListener('click', function() {
+            if (document.querySelectorAll('.course-fee-row').length > 1) {
+                courseRow.remove();
+            } else {
+                alert('You need at least one course');
+            }
+        });
+        
+        this.coursesContainer.appendChild(courseRow);
+    },
+    
+    updatePerCreditFees: function() {
+        const department = this.departmentSelect.value;
+        const semesterType = this.semesterTypeSelect.value;
+        
+        if (!department || !semesterType) return;
+        
+        const perCredit = this.feeStructure[department][semesterType].perCredit;
+        
+        // Update all empty per credit fields
+        document.querySelectorAll('.course-per-credit').forEach(input => {
+            if (!input.value || input.value === "0") {
+                input.value = perCredit;
+            }
+        });
+    },
+    
+    calculateFees: function() {
+        const department = this.departmentSelect.value;
+        const semesterType = this.semesterTypeSelect.value;
+        const scholarship = parseInt(this.scholarshipInput.value) || 0;
+        
+        if (!department) {
+            alert('Please select your department');
+            return;
+        }
+        
+        // Calculate total credits and tuition fee
+        let totalCredits = 0;
+        let tuitionFee = 0;
+        const courses = [];
+        
+        document.querySelectorAll('.course-fee-row').forEach(row => {
+            const code = row.querySelector('.course-code').value.trim();
+            const credits = parseFloat(row.querySelector('.course-credit').value) || 0;
+            const perCredit = parseFloat(row.querySelector('.course-per-credit').value) || 0;
+            
+            if (code && credits > 0 && perCredit > 0) {
+                totalCredits += credits;
+                const courseFee = credits * perCredit;
+                tuitionFee += courseFee;
+                
+                courses.push({
+                    code,
+                    credits,
+                    perCredit,
+                    courseFee
+                });
+            }
+        });
+        
+        if (totalCredits === 0) {
+            alert('Please add at least one valid course');
+            return;
+        }
+        
+        if (scholarship < 0 || scholarship > 100) {
+            alert('Scholarship must be between 0 and 100');
+            return;
+        }
+        
+        // Other fees (not affected by scholarship)
+        const registrationFee = parseFloat(this.registrationFeeInput.value) || 0;
+        const libraryFee = parseFloat(this.libraryFeeInput.value) || 0;
+        const activityFee = parseFloat(this.activityFeeInput.value) || 0;
+        const otherFees = registrationFee + libraryFee + activityFee;
+        
+        // Scholarship only applies to tuition fee
+        const scholarshipAmount = (tuitionFee * scholarship) / 100;
+        const totalFee = (tuitionFee + otherFees) - scholarshipAmount;
+        
+        // Update displays
+        this.totalCreditsDisplay.textContent = totalCredits;
+        this.tuitionFeeDisplay.textContent = `${tuitionFee.toLocaleString()} BDT`;
+        this.otherFeesDisplay.textContent = `${otherFees.toLocaleString()} BDT`;
+        this.scholarshipDisplay.textContent = `${scholarshipAmount.toLocaleString()} BDT (${scholarship}%)`;
+        this.totalFeeDisplay.textContent = `${totalFee.toLocaleString()} BDT`;
+        
+        // Show course details
+        this.showCourseDetails(courses);
+    },
+    
+    showCourseDetails: function(courses) {
+        let html = '';
+        
+        if (courses.length === 0) {
+            html = '<p>No courses added</p>';
+        } else {
+            html = '<table class="fee-course-table">';
+            html += '<tr><th>Course</th><th>Credits</th><th>Per Credit</th><th>Fee</th></tr>';
+            
+            courses.forEach(course => {
+                html += `
+                    <tr>
+                        <td>${course.code}</td>
+                        <td>${course.credits}</td>
+                        <td>${course.perCredit.toLocaleString()} BDT</td>
+                        <td>${course.courseFee.toLocaleString()} BDT</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table>';
+        }
+        
+        this.courseFeeDetails.innerHTML = html;
+    },
+    
+    resetCalculator: function() {
+        this.departmentSelect.value = '';
+        this.semesterTypeSelect.value = 'regular';
+        this.registrationFeeInput.value = '5000';
+        this.libraryFeeInput.value = '2000';
+        this.activityFeeInput.value = '1500';
+        this.scholarshipInput.value = '0';
+        
+        // Remove all but one course row
+        const rows = document.querySelectorAll('.course-fee-row');
+        for (let i = 1; i < rows.length; i++) {
+            rows[i].remove();
+        }
+        
+        // Reset the first row
+        const firstRow = rows[0];
+        firstRow.querySelector('.course-code').value = '';
+        firstRow.querySelector('.course-credit').value = '3';
+        firstRow.querySelector('.course-per-credit').value = '';
+        
+        // Reset results
+        this.totalCreditsDisplay.textContent = '-';
+        this.tuitionFeeDisplay.textContent = '-';
+        this.otherFeesDisplay.textContent = '-';
+        this.scholarshipDisplay.textContent = '-';
+        this.totalFeeDisplay.textContent = '-';
+        this.courseFeeDetails.innerHTML = '';
+    },
+    
+    printFeeDetails: function() {
+        const department = this.departmentSelect.options[this.departmentSelect.selectedIndex].text;
+        const semesterType = this.semesterTypeSelect.options[this.semesterTypeSelect.selectedIndex].text;
+        
+        const printContent = `
+            <h2>EWU Fee Calculation</h2>
+            <div class="print-header">
+                <p><strong>Department:</strong> ${department}</p>
+                <p><strong>Semester Type:</strong> ${semesterType}</p>
+            </div>
+            
+            <h3>Course Details</h3>
+            ${this.courseFeeDetails.innerHTML}
+            
+            <h3>Fee Summary</h3>
+            <table class="print-fee-summary">
+                <tr>
+                    <td>Total Credits:</td>
+                    <td>${this.totalCreditsDisplay.textContent}</td>
+                </tr>
+                <tr>
+                    <td>Tuition Fee:</td>
+                    <td>${this.tuitionFeeDisplay.textContent}</td>
+                </tr>
+                <tr>
+                    <td>Other Fees:</td>
+                    <td>${this.otherFeesDisplay.textContent}</td>
+                </tr>
+                <tr>
+                    <td>Scholarship:</td>
+                    <td>${this.scholarshipDisplay.textContent}</td>
+                </tr>
+                <tr class="total">
+                    <td>Total Payable:</td>
+                    <td>${this.totalFeeDisplay.textContent}</td>
+                </tr>
+            </table>
+            
+            <div class="print-footer">
+                <p>Generated on ${new Date().toLocaleDateString()}</p>
+            </div>
+        `;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>EWU Fee Calculation</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h2, h3 { color: #0056b3; }
+                        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .print-header { margin-bottom: 20px; }
+                        .print-fee-summary { width: 60%; }
+                        .print-fee-summary tr.total { font-weight: bold; }
+                        .print-footer { margin-top: 30px; text-align: center; font-size: 0.9em; color: #666; }
+                    </style>
+                </head>
+                <body>
+                    ${printContent}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(function() { window.close(); }, 1000);
+                        };
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+};
 
     // Routine Generator Functionality (updated)
     const routineGenerator = {
