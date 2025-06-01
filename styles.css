@@ -9,7 +9,7 @@
     --success-color: #28a745;
     --danger-color: #dc3545;
     --white: #fff;
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow: 0 4px 6px rgba(17, 54, 205, 0.958);
 }
 
 * {
@@ -22,7 +22,7 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
     color: var(--text-color);
-    background-color: #100063;
+    background-color: #c3bce0;
 }
 
 .container {
