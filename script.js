@@ -1,8 +1,39 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Theme Management
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeToggleHeader = document.getElementById('theme-toggle-header');
+    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+    let currentTheme = localStorage.getItem('theme') || (prefersDarkScheme.matches ? 'dark' : 'light');
+    
+    // Set initial theme
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    updateThemeToggle(currentTheme);
+    
+    // Theme toggle functionality
+    function toggleTheme() {
+        currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        localStorage.setItem('theme', currentTheme);
+        updateThemeToggle(currentTheme);
+    }
+    
+    function updateThemeToggle(theme) {
+        if (theme === 'dark') {
+            themeToggle.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+            themeToggleHeader.innerHTML = '<i class="fas fa-moon"></i>';
+        } else {
+            themeToggle.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+            themeToggleHeader.innerHTML = '<i class="fas fa-sun"></i>';
+        }
+    }
+    
+    themeToggle.addEventListener('click', toggleTheme);
+    themeToggleHeader.addEventListener('click', toggleTheme);
+    
     // Show greeting page initially
     const greetingPage = document.getElementById('greeting-page');
     const mainContent = document.getElementById('main-content');
-    const toolButtons = document.querySelectorAll('.tool-btn');
+    const toolButtons = document.querySelectorAll('.tool-btn:not(.portal-btn)');
     const backButton = document.getElementById('back-to-home');
     
     // Navigation between greeting page and tools
@@ -12,16 +43,28 @@ document.addEventListener('DOMContentLoaded', function() {
             greetingPage.style.display = 'none';
             mainContent.style.display = 'block';
             
-            // Scroll to the selected tool
-            setTimeout(() => {
-                const targetElement = document.getElementById(target);
-                if (targetElement) {
-                    window.scrollTo({
-                        top: targetElement.offsetTop - 100,
-                        behavior: 'smooth'
-                    });
-                }
-            }, 50);
+            // Hide all sections first
+            document.querySelectorAll('.tool-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show only the selected section
+            const targetElement = document.getElementById(target);
+            if (targetElement) {
+                targetElement.style.display = 'block';
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+                
+                // Update active nav item
+                document.querySelectorAll('nav a').forEach(a => {
+                    a.classList.remove('active');
+                    if (a.getAttribute('href') === `#${target}`) {
+                        a.classList.add('active');
+                    }
+                });
+            }
         });
     });
     
@@ -29,233 +72,399 @@ document.addEventListener('DOMContentLoaded', function() {
         greetingPage.style.display = 'flex';
         mainContent.style.display = 'none';
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-    
-    // Instructions functionality
-    const instructionButtons = document.querySelectorAll('.instruction-btn');
-    const instructionModals = document.querySelectorAll('.instruction-modal');
-    const closeButtons = document.querySelectorAll('.close-instruction');
-    
-    instructionButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const target = this.getAttribute('data-target');
-            document.getElementById(target).style.display = 'block';
+        
+        // Show all sections again when going back
+        document.querySelectorAll('.tool-section').forEach(section => {
+            section.style.display = 'block';
         });
     });
     
-    closeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            this.closest('.instruction-modal').style.display = 'none';
-        });
-    });
-    
-    window.addEventListener('click', function(event) {
-        instructionModals.forEach(modal => {
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
-        });
-    });
-    
-    // CGPA Calculator Functionality (updated for EWU's 4.5 scale)
-    const cgpaCalculator = {
-        init: function() {
-            this.cacheElements();
-            this.bindEvents();
-        },
-        
-        cacheElements: function() {
-            this.currentCgpaInput = document.getElementById('current-cgpa');
-            this.completedCreditsInput = document.getElementById('completed-credits');
-            this.coursesContainer = document.getElementById('courses-container');
-            this.addCourseBtn = document.getElementById('add-course');
-            this.calculateBtn = document.getElementById('calculate-cgpa');
-            this.resetBtn = document.getElementById('reset-cgpa');
-            this.printBtn = document.getElementById('print-cgpa');
-            this.semesterGpaDisplay = document.getElementById('semester-gpa');
-            this.newCgpaDisplay = document.getElementById('new-cgpa');
-        },
-        
-        bindEvents: function() {
-            this.addCourseBtn.addEventListener('click', this.addCourse.bind(this));
-            this.calculateBtn.addEventListener('click', this.calculateCgpa.bind(this));
-            this.resetBtn.addEventListener('click', this.resetCalculator.bind(this));
-            this.printBtn.addEventListener('click', this.printResults.bind(this));
+    // Navigation handling for header links
+    document.querySelectorAll('nav a').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
             
-            // Add initial course
-            this.addCourse();
-        },
-        
-        addCourse: function() {
-            const courseRow = document.createElement('div');
-            courseRow.className = 'course-row';
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+            this.classList.add('active');
             
-            const gradeSelect = document.createElement('select');
-            gradeSelect.className = 'course-grade';
-            gradeSelect.innerHTML = `
-                <option value="">Select Grade</option>
-                <option value="4.0">A+ (4.0)</option>
-                <option value="3.75">A (3.75)</option>
-                <option value="3.5">A- (3.5)</option>
-                <option value="3.25">B+ (3.25)</option>
-                <option value="3.0">B (3.0)</option>
-                <option value="2.75">B- (2.75)</option>
-                <option value="2.5">C+ (2.5)</option>
-                <option value="2.25">C (2.25)</option>
-                <option value="2.0">D (2.0)</option>
-                <option value="0.0">F (0.0)</option>
-            `;
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
             
-            const creditInput = document.createElement('input');
-            creditInput.type = 'number';
-            creditInput.className = 'course-credit';
-            creditInput.min = '0.5';
-            creditInput.max = '4.5';
-            creditInput.step = '0.5';
-            creditInput.placeholder = 'Credits';
-            creditInput.value = '3';
-            
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'remove-course';
-            removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
-            removeBtn.addEventListener('click', function() {
-                if (document.querySelectorAll('.course-row').length > 1) {
-                    courseRow.remove();
-                } else {
-                    alert('You need at least one course');
-                }
+            // Hide all sections first
+            document.querySelectorAll('.tool-section').forEach(section => {
+                section.style.display = 'none';
             });
             
-            courseRow.appendChild(gradeSelect);
-            courseRow.appendChild(creditInput);
-            courseRow.appendChild(removeBtn);
-            
-            this.coursesContainer.appendChild(courseRow);
-        },
+            // Show only the selected section
+            if (targetElement) {
+                targetElement.style.display = 'block';
+                window.scrollTo({
+                    top: targetElement.offsetTop - 80,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+    
+    // Set active nav item based on scroll position
+    window.addEventListener('scroll', function() {
+        const sections = document.querySelectorAll('.tool-section');
+        let currentSection = '';
         
-        calculateCgpa: function() {
-            const currentCgpa = parseFloat(this.currentCgpaInput.value) || 0;
-            const completedCredits = parseFloat(this.completedCreditsInput.value) || 0;
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop - 100;
+            const sectionBottom = sectionTop + section.offsetHeight;
             
-            // Validate current CGPA (0 to 4.5)
-            if (currentCgpa < 0 || currentCgpa > 4.5) {
-                alert('Current CGPA must be between 0 and 4.5');
-                return;
+            // Only consider visible sections
+            if (window.scrollY >= sectionTop && window.scrollY < sectionBottom && 
+                section.style.display !== 'none') {
+                currentSection = section.getAttribute('id');
             }
-            
-            let totalGradePoints = 0;
-            let totalCredits = 0;
-            let allValid = true;
-            
-            document.querySelectorAll('.course-row').forEach(row => {
-                const grade = parseFloat(row.querySelector('.course-grade').value);
-                const credits = parseFloat(row.querySelector('.course-credit').value);
-                
-                if (isNaN(grade) || isNaN(credits)) {
-                    allValid = false;
-                    return;
-                }
-                
-                // Validate credits (0.5 to 4.5)
-                if (credits < 0.5 || credits > 4.5) {
-                    alert('Credits must be between 0.5 and 4.5');
-                    allValid = false;
-                    return;
-                }
-                
-                totalGradePoints += grade * credits;
-                totalCredits += credits;
-            });
-            
-            if (!allValid) {
-                alert('Please fill all grade and credit fields with valid values');
-                return;
-            }
-            
-            if (totalCredits === 0) {
-                alert('Please add at least one course');
-                return;
-            }
-            
-            const semesterGpa = totalGradePoints / totalCredits;
-            let newCgpa = semesterGpa;
-            
-            if (completedCredits > 0) {
-                const totalGradePointsBefore = currentCgpa * completedCredits;
-                newCgpa = (totalGradePointsBefore + totalGradePoints) / (completedCredits + totalCredits);
-            }
-            
-            // Cap the CGPA at 4.5
-            newCgpa = Math.min(newCgpa, 4.5);
-            
-            this.semesterGpaDisplay.textContent = semesterGpa.toFixed(2);
-            this.newCgpaDisplay.textContent = newCgpa.toFixed(2);
-        },
+        });
         
-        resetCalculator: function() {
-            this.currentCgpaInput.value = '';
-            this.completedCreditsInput.value = '';
-            this.semesterGpaDisplay.textContent = '-';
-            this.newCgpaDisplay.textContent = '-';
-            
-            // Remove all but one course row
-            const rows = document.querySelectorAll('.course-row');
-            for (let i = 1; i < rows.length; i++) {
-                rows[i].remove();
+        document.querySelectorAll('nav a').forEach(a => {
+            a.classList.remove('active');
+            if (a.getAttribute('href') === `#${currentSection}`) {
+                a.classList.add('active');
             }
-            
-            // Reset the first row
-            const firstRow = rows[0];
-            firstRow.querySelector('.course-grade').value = '';
-            firstRow.querySelector('.course-credit').value = '3';
-        },
+        });
+    });
+    
+    // Show first section by default when main content is shown
+    if (mainContent.style.display === 'block') {
+        document.querySelector('nav a').click();
+    }
+    
+    // CGPA Calculator Functionality
+ const cgpaCalculator = {
+    init: function() {
+        this.cacheElements();
+        this.bindEvents();
+    },
+    
+    cacheElements: function() {
+        this.currentCgpaInput = document.getElementById('current-cgpa');
+        this.completedCreditsInput = document.getElementById('completed-credits');
+        this.coursesContainer = document.getElementById('courses-container');
+        this.addCourseBtn = document.getElementById('add-course');
+        this.calculateBtn = document.getElementById('calculate-cgpa');
+        this.resetBtn = document.getElementById('reset-cgpa');
+        this.printBtn = document.getElementById('print-cgpa');
+        this.semesterGpaDisplay = document.getElementById('semester-gpa');
+        this.newCgpaDisplay = document.getElementById('new-cgpa');
+        this.hasRetakesSelect = document.getElementById('has-retakes');
+        this.retakesContainer = document.getElementById('retakes-container');
+        this.retakesList = document.getElementById('retakes-list');
+        this.addRetakeBtn = document.getElementById('add-retake');
+    },
+    
+    bindEvents: function() {
+        this.addCourseBtn.addEventListener('click', this.addCourse.bind(this));
+        this.calculateBtn.addEventListener('click', this.calculateCgpa.bind(this));
+        this.resetBtn.addEventListener('click', this.resetCalculator.bind(this));
+        this.printBtn.addEventListener('click', this.printResults.bind(this));
+        this.hasRetakesSelect.addEventListener('change', this.toggleRetakesContainer.bind(this));
+        this.addRetakeBtn.addEventListener('click', this.addRetake.bind(this));
         
-        printResults: function() {
-            const printContent = `
-                <h2>EWU CGPA Calculation Result</h2>
-                <p><strong>Current CGPA:</strong> ${this.currentCgpaInput.value || 'N/A'}</p>
-                <p><strong>Completed Credits:</strong> ${this.completedCreditsInput.value || '0'}</p>
-                <h3>Current Semester Courses</h3>
-                <ul>
-                    ${Array.from(document.querySelectorAll('.course-row')).map(row => {
-                        const grade = row.querySelector('.course-grade').value;
-                        const credits = row.querySelector('.course-credit').value;
-                        return `<li>Grade: ${grade || 'Not selected'}, Credits: ${credits}</li>`;
-                    }).join('')}
-                </ul>
-                <h3>Results</h3>
-                <p><strong>Semester GPA:</strong> ${this.semesterGpaDisplay.textContent}</p>
-                <p><strong>New CGPA:</strong> ${this.newCgpaDisplay.textContent}</p>
-                <p>Generated on ${new Date().toLocaleString()}</p>
-                <p><small>Note: EWU follows a 4.5 grading scale (A+ = 4.0, A = 3.75, A- = 3.5, B+ = 3.25, B = 3.0, B- = 2.75, C+ = 2.5, C = 2.25, D = 2.0, F = 0.0)</small></p>
-            `;
+        // Add initial course
+        this.addCourse();
+    },
+    
+    addCourse: function() {
+        const courseRow = document.createElement('div');
+        courseRow.className = 'course-row';
+        
+        const gradeSelect = document.createElement('select');
+        gradeSelect.className = 'course-grade';
+        gradeSelect.innerHTML = `
+            <option value="">Select Grade</option>
+            <option value="4.0">A+ (4.0)</option>
+            <option value="3.75">A (3.75)</option>
+            <option value="3.5">A- (3.5)</option>
+            <option value="3.25">B+ (3.25)</option>
+            <option value="3.0">B (3.0)</option>
+            <option value="2.75">B- (2.75)</option>
+            <option value="2.5">C+ (2.5)</option>
+            <option value="2.25">C (2.25)</option>
+            <option value="2.0">D (2.0)</option>
+            <option value="0.0">F (0.0)</option>
+        `;
+        
+        const creditInput = document.createElement('input');
+        creditInput.type = 'number';
+        creditInput.className = 'course-credit';
+        creditInput.min = '0.5';
+        creditInput.max = '4.5';
+        creditInput.step = '0.5';
+        creditInput.placeholder = 'Credits';
+        creditInput.value = '3';
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-course';
+        removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
+        removeBtn.addEventListener('click', function() {
+            if (document.querySelectorAll('.course-row').length > 1) {
+                courseRow.remove();
+            } else {
+                showToast('You need at least one course', 'error');
+            }
+        });
+        
+        courseRow.appendChild(gradeSelect);
+        courseRow.appendChild(creditInput);
+        courseRow.appendChild(removeBtn);
+        
+        this.coursesContainer.appendChild(courseRow);
+    },
+    
+    toggleRetakesContainer: function() {
+        this.retakesContainer.style.display = this.hasRetakesSelect.value === 'yes' ? 'block' : 'none';
+    },
+    
+    addRetake: function() {
+        const retakeRow = document.createElement('div');
+        retakeRow.className = 'retake-row';
+        
+        retakeRow.innerHTML = `
+            <input type="text" class="retake-code" placeholder="Course Code (e.g., CSE101)">
+            <input type="number" class="retake-original-gpa" step="0.01" min="0" max="4.5" placeholder="Original GPA">
+            <input type="number" class="retake-credits" min="0.5" max="4.5" step="0.5" placeholder="Credits">
+            <input type="number" class="retake-new-gpa" step="0.01" min="0" max="4.5" placeholder="Retake GPA">
+            <button class="remove-retake"><i class="fas fa-trash"></i></button>
+        `;
+        
+        retakeRow.querySelector('.remove-retake').addEventListener('click', function() {
+            if (document.querySelectorAll('.retake-row').length > 1) {
+                retakeRow.remove();
+            } else {
+                showToast('You need at least one retake row', 'error');
+            }
+        });
+        
+        this.retakesList.appendChild(retakeRow);
+    },
+    
+    getRetakeCourses: function() {
+        const retakes = [];
+        
+        document.querySelectorAll('.retake-row').forEach(row => {
+            const code = row.querySelector('.retake-code').value.trim().toUpperCase();
+            const originalGpa = parseFloat(row.querySelector('.retake-original-gpa').value);
+            const credits = parseFloat(row.querySelector('.retake-credits').value);
+            const newGpa = parseFloat(row.querySelector('.retake-new-gpa').value);
             
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>EWU CGPA Result</title>
-                        <style>
-                            body { font-family: Arial, sans-serif; padding: 20px; }
-                            h2, h3 { color: #0056b3; }
-                            ul { margin-left: 20px; }
-                            small { font-size: 0.8em; color: #666; }
-                        </style>
-                    </head>
-                    <body>
-                        ${printContent}
-                        <script>
-                            window.onload = function() {
-                                window.print();
-                                setTimeout(function() { window.close(); }, 1000);
-                            };
-                        </script>
-                    </body>
-                </html>
-            `);
-            printWindow.document.close();
+            if (code && !isNaN(originalGpa)) {
+                retakes.push({
+                    code,
+                    originalGpa,
+                    credits: isNaN(credits) ? 0 : credits,
+                    newGpa: isNaN(newGpa) ? originalGpa : newGpa
+                });
+            }
+        });
+        
+        return retakes;
+    },
+    
+    calculateCgpa: function() {
+        const currentCgpa = parseFloat(this.currentCgpaInput.value) || 0;
+        const completedCredits = parseFloat(this.completedCreditsInput.value) || 0;
+        
+        // Validate current CGPA (0 to 4.5)
+        if (currentCgpa < 0 || currentCgpa > 4.5) {
+            showToast('Current CGPA must be between 0 and 4.5', 'error');
+            return;
         }
-    };
+        
+        // Get retake courses if any
+        const retakeCourses = this.hasRetakesSelect.value === 'yes' ? this.getRetakeCourses() : [];
+        
+        let totalGradePoints = 0;
+        let totalCredits = 0;
+        let allValid = true;
+        
+        // Calculate current semester courses
+        document.querySelectorAll('.course-row').forEach(row => {
+            const grade = parseFloat(row.querySelector('.course-grade').value);
+            const credits = parseFloat(row.querySelector('.course-credit').value);
+            
+            if (isNaN(grade)) {
+                row.querySelector('.course-grade').style.borderColor = 'var(--danger-color)';
+                allValid = false;
+            } else {
+                row.querySelector('.course-grade').style.borderColor = '';
+            }
+
+            if (isNaN(credits)) {
+                row.querySelector('.course-credit').style.borderColor = 'var(--danger-color)';
+                allValid = false;
+            } else {
+                row.querySelector('.course-credit').style.borderColor = '';
+            }
+            
+            // Validate credits (0.5 to 4.5)
+            if (credits < 0.5 || credits > 4.5) {
+                showToast('Credits must be between 0.5 and 4.5', 'error');
+                allValid = false;
+                return;
+            }
+            
+            totalGradePoints += grade * credits;
+            totalCredits += credits;
+        });
+        
+        if (!allValid) {
+            showToast('Please fill all grade and credit fields with valid values', 'error');
+            return;
+        }
+        
+        if (totalCredits === 0) {
+            showToast('Please add at least one course', 'error');
+            return;
+        }
+        
+        // Calculate semester GPA
+        const semesterGpa = totalGradePoints / totalCredits;
+        
+        // Calculate new CGPA considering retakes
+        let newCgpa = semesterGpa;
+        let adjustedCompletedCredits = completedCredits;
+        let adjustedGradePoints = currentCgpa * completedCredits;
+        
+        if (completedCredits > 0) {
+            // Adjust for retakes
+            retakeCourses.forEach(retake => {
+                // Subtract the original grade points
+                adjustedGradePoints -= retake.originalGpa * retake.credits;
+                // Add the new grade points
+                adjustedGradePoints += retake.newGpa * retake.credits;
+                // Don't add credits again (they were already counted)
+            });
+            
+            newCgpa = (adjustedGradePoints + totalGradePoints) / (completedCredits + totalCredits);
+        }
+        
+        // Cap the CGPA at 4.5
+        newCgpa = Math.min(newCgpa, 4.5);
+        
+        this.semesterGpaDisplay.textContent = semesterGpa.toFixed(2);
+        this.newCgpaDisplay.textContent = newCgpa.toFixed(2);
+        
+        showToast('CGPA calculated successfully!', 'success');
+    },
+    
+    resetCalculator: function() {
+        this.currentCgpaInput.value = '';
+        this.completedCreditsInput.value = '';
+        this.semesterGpaDisplay.textContent = '-';
+        this.newCgpaDisplay.textContent = '-';
+        this.hasRetakesSelect.value = 'no';
+        this.retakesContainer.style.display = 'none';
+        
+        // Remove all but one course row
+        const rows = document.querySelectorAll('.course-row');
+        for (let i = 1; i < rows.length; i++) {
+            rows[i].remove();
+        }
+        
+        // Reset the first row
+        const firstRow = rows[0];
+        firstRow.querySelector('.course-grade').value = '';
+        firstRow.querySelector('.course-credit').value = '3';
+        
+        // Remove all but one retake row
+        const retakeRows = document.querySelectorAll('.retake-row');
+        for (let i = 1; i < retakeRows.length; i++) {
+            retakeRows[i].remove();
+        }
+        
+        // Reset the first retake row
+        const firstRetakeRow = retakeRows[0];
+        if (firstRetakeRow) {
+            firstRetakeRow.querySelector('.retake-code').value = '';
+            firstRetakeRow.querySelector('.retake-original-gpa').value = '';
+            firstRetakeRow.querySelector('.retake-credits').value = '';
+            firstRetakeRow.querySelector('.retake-new-gpa').value = '';
+        }
+        
+        showToast('Calculator reset', 'info');
+    },
+    
+    printResults: function() {
+        const retakeCourses = this.hasRetakesSelect.value === 'yes' ? this.getRetakeCourses() : [];
+        
+        const printContent = `
+            <h2>EWU CGPA Calculation Result</h2>
+            <p><strong>Current CGPA:</strong> ${this.currentCgpaInput.value || 'N/A'}</p>
+            <p><strong>Completed Credits:</strong> ${this.completedCreditsInput.value || '0'}</p>
+            
+            ${retakeCourses.length > 0 ? `
+                <h3>Retaken Courses</h3>
+                <table class="retake-table">
+                    <tr>
+                        <th>Course</th>
+                        <th>Original GPA</th>
+                        <th>Credits</th>
+                        <th>Retake GPA</th>
+                    </tr>
+                    ${retakeCourses.map(retake => `
+                        <tr>
+                            <td>${retake.code}</td>
+                            <td>${retake.originalGpa.toFixed(2)}</td>
+                            <td>${retake.credits}</td>
+                            <td>${retake.newGpa.toFixed(2)}</td>
+                        </tr>
+                    `).join('')}
+                </table>
+            ` : ''}
+            
+            <h3>Current Semester Courses</h3>
+            <ul>
+                ${Array.from(document.querySelectorAll('.course-row')).map(row => {
+                    const grade = row.querySelector('.course-grade').value;
+                    const credits = row.querySelector('.course-credit').value;
+                    return `<li>Grade: ${grade || 'Not selected'}, Credits: ${credits}</li>`;
+                }).join('')}
+            </ul>
+            
+            <h3>Results</h3>
+            <p><strong>Semester GPA:</strong> ${this.semesterGpaDisplay.textContent}</p>
+            <p><strong>New CGPA:</strong> ${this.newCgpaDisplay.textContent}</p>
+            <p>Generated on ${new Date().toLocaleString()}</p>
+            <p><small>Note: EWU follows a 4.5 grading scale (A+ = 4.0, A = 3.75, A- = 3.5, B+ = 3.25, B = 3.0, B- = 2.75, C+ = 2.5, C = 2.25, D = 2.0, F = 0.0)</small></p>
+            ${retakeCourses.length > 0 ? '<p><small>Note: Retake courses replace the original grade in CGPA calculation</small></p>' : ''}
+        `;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>EWU CGPA Result</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        h2, h3 { color: #0056b3; }
+                        ul { margin-left: 20px; }
+                        table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        small { font-size: 0.8em; color: #666; }
+                    </style>
+                </head>
+                <body>
+                    ${printContent}
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(function() { window.close(); }, 1000);
+                        };
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+};
+
 
     // Course Flow Charts Functionality
     const flowCharts = {
@@ -280,9 +489,8 @@ document.addEventListener('DOMContentLoaded', function() {
             this.sampleData = {
                 cse: {
                     bsc: {
-                        title: "",
+                        title: "BSc in Computer Science & Engineering",
                         flowchart: `
-                           
                             <div class="semester-flow">
                                 <h4>1st Year - 1st Semester (Total Credit: 35)</h4>
                                 <ul class="course-list">
@@ -525,7 +733,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (document.querySelectorAll('.course-fee-row').length > 1) {
                     courseRow.remove();
                 } else {
-                    alert('You need at least one course');
+                    showToast('You need at least one course', 'error');
                 }
             });
             
@@ -554,7 +762,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const scholarship = parseInt(this.scholarshipInput.value) || 0;
             
             if (!department) {
-                alert('Please select your department');
+                showToast('Please select your department', 'error');
                 return;
             }
             
@@ -583,12 +791,12 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (totalCredits === 0) {
-                alert('Please add at least one valid course');
+                showToast('Please add at least one valid course', 'error');
                 return;
             }
             
             if (scholarship < 0 || scholarship > 100) {
-                alert('Scholarship must be between 0 and 100');
+                showToast('Scholarship must be between 0 and 100', 'error');
                 return;
             }
             
@@ -611,6 +819,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Show course details
             this.showCourseDetails(courses);
+            
+            showToast('Fees calculated successfully!', 'success');
         },
         
         showCourseDetails: function(courses) {
@@ -666,6 +876,8 @@ document.addEventListener('DOMContentLoaded', function() {
             this.scholarshipDisplay.textContent = '-';
             this.totalFeeDisplay.textContent = '-';
             this.courseFeeDetails.innerHTML = '';
+            
+            showToast('Calculator reset', 'info');
         },
         
         printFeeDetails: function() {
@@ -743,7 +955,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Routine Generator Functionality (updated)
+    // Routine Generator Functionality
     const routineGenerator = {
         courses: [],
         init: function() {
@@ -807,7 +1019,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const room = this.roomInput.value.trim();
             
             if (!code || !title || !faculty) {
-                this.showToast('Please fill all required fields', 'error');
+                showToast('Please fill all required fields', 'error');
                 return;
             }
             
@@ -818,7 +1030,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const duration = parseFloat(this.labDuration.value);
                 
                 if (!day || !time || isNaN(duration)) {
-                    this.showToast('Please fill all lab session details', 'error');
+                    showToast('Please fill all lab session details', 'error');
                     return;
                 }
                 
@@ -845,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 if (sessions.length === 0) {
-                    this.showToast('Please add at least one class session', 'error');
+                    showToast('Please add at least one class session', 'error');
                     return;
                 }
             }
@@ -863,7 +1075,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.courses.push(course);
             this.renderCourseList();
             this.clearForm();
-            this.showToast('Course added successfully!', 'success');
+            showToast('Course added successfully!', 'success');
         },
         
         renderCourseList: function() {
@@ -917,7 +1129,7 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteCourse: function(id) {
             this.courses = this.courses.filter(course => course.id !== id);
             this.renderCourseList();
-            this.showToast('Course deleted', 'info');
+            showToast('Course deleted', 'info');
         },
         
         editCourse: function(id) {
@@ -981,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         generateRoutine: function() {
             if (this.courses.length === 0) {
-                this.showToast('Please add at least one course', 'error');
+                showToast('Please add at least one course', 'error');
                 return;
             }
 
@@ -1106,7 +1318,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             this.routineDisplay.innerHTML = html;
             this.printBtn.disabled = false;
-            this.showToast('Routine generated successfully!', 'success');
+            showToast('Routine generated successfully!', 'success');
         },
 
         findBestTimeMatch: function(courses, startTime, endTime) {
@@ -1200,15 +1412,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
             this.printBtn.disabled = true;
-            this.showToast('All courses cleared', 'info');
-        },
-        
-        showToast: function(message, type) {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `
-                <div class="toast-message">${message}</div>
-                <button class="toast-close">&times;</button>
+            showToast('All courses cleared', 'info');
+        }
+    };
+
+    // Toast notification function
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <div class="toast-message">${message}</div>
+            <button class="toast-close">&times;</button>
         `;
         
         document.body.appendChild(toast);
@@ -1223,17 +1437,7 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => toast.remove(), 300);
         });
     }
-};
 
-document.addEventListener('DOMContentLoaded', function() {
-    routineGenerator.init();
-});
-
-// Initialize the routine generator when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    routineGenerator.init();
-});
-    
     // Initialize all components
     cgpaCalculator.init();
     flowCharts.init();
