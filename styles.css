@@ -859,14 +859,14 @@ footer {
 
 .retake-row input {
     flex: 1;
-    min-width: 100px;
+    min-width: 150px;
 }
 
 .remove-retake {
     background-color: var(--danger-color);
     color: white;
     border: none;
-    width: 40px;
+    width: 100px;
     height: 40px;
     border-radius: 4px;
     cursor: pointer;
