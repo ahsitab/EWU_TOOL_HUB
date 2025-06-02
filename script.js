@@ -489,7 +489,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.sampleData = {
                 cse: {
                     bsc: {
-                        title: "BSc in Computer Science & Engineering",
+                        title: "",
                         flowchart: `
                             <div class="semester-flow">
                                 <h4>1st Year - 1st Semester (Total Credit: 35)</h4>
@@ -956,465 +956,538 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Routine Generator Functionality
-    const routineGenerator = {
-        courses: [],
-        init: function() {
-            this.cacheElements();
-            this.bindEvents();
-            this.setupCourseTypeToggle();
-        },
+ // Routine Generator Functionality
+const routineGenerator = {
+    courses: [],
+    init: function() {
+        this.cacheElements();
+        this.bindEvents();
+        this.setupCourseTypeToggle();
+    },
+    
+    cacheElements: function() {
+        this.courseCodeInput = document.getElementById('course-code');
+        this.courseTitleInput = document.getElementById('course-title');
+        this.courseTypeInput = document.getElementById('course-type');
+        this.theorySessionsContainer = document.getElementById('theory-sessions-container');
+        this.labSessionContainer = document.getElementById('lab-session-container');
+        this.facultyInput = document.getElementById('faculty-name');
+        this.roomInput = document.getElementById('room-number');
+        this.addCourseBtn = document.getElementById('add-course-btn');
+        this.courseList = document.getElementById('course-list');
+        this.routineDisplay = document.getElementById('routine-display');
+        this.generateBtn = document.getElementById('generate-routine');
+        this.downloadBtn = document.getElementById('download-routine');
+        this.printBtn = document.getElementById('print-routine');
+        this.clearBtn = document.getElementById('clear-routine');
         
-        cacheElements: function() {
-            this.courseCodeInput = document.getElementById('course-code');
-            this.courseTitleInput = document.getElementById('course-title');
-            this.courseTypeInput = document.getElementById('course-type');
-            this.theorySessionsContainer = document.getElementById('theory-sessions-container');
-            this.labSessionContainer = document.getElementById('lab-session-container');
-            this.facultyInput = document.getElementById('faculty-name');
-            this.roomInput = document.getElementById('room-number');
-            this.addCourseBtn = document.getElementById('add-course-btn');
-            this.courseList = document.getElementById('course-list');
-            this.routineDisplay = document.getElementById('routine-display');
-            this.generateBtn = document.getElementById('generate-routine');
-            this.printBtn = document.getElementById('print-routine');
-            this.clearBtn = document.getElementById('clear-routine');
+        // Get all session inputs
+        this.theoryDays = this.theorySessionsContainer.querySelectorAll('.class-day');
+        this.theoryTimes = this.theorySessionsContainer.querySelectorAll('.class-time');
+        this.theoryDurations = this.theorySessionsContainer.querySelectorAll('.class-duration');
+        
+        this.labDay = this.labSessionContainer.querySelector('.class-day');
+        this.labTime = this.labSessionContainer.querySelector('.class-time');
+        this.labDuration = this.labSessionContainer.querySelector('.class-duration');
+    },
+    
+    bindEvents: function() {
+        this.addCourseBtn.addEventListener('click', this.addCourse.bind(this));
+        this.generateBtn.addEventListener('click', this.generateRoutine.bind(this));
+        this.downloadBtn.addEventListener('click', this.downloadRoutineAsImage.bind(this));
+        this.printBtn.addEventListener('click', this.printRoutine.bind(this));
+        this.clearBtn.addEventListener('click', this.clearAll.bind(this));
+    },
+    
+    setupCourseTypeToggle: function() {
+        this.courseTypeInput.addEventListener('change', () => {
+            if (this.courseTypeInput.value === 'lab') {
+                this.theorySessionsContainer.style.display = 'none';
+                this.labSessionContainer.style.display = 'block';
+                this.labDuration.value = '1.5';
+            } else {
+                this.theorySessionsContainer.style.display = 'block';
+                this.labSessionContainer.style.display = 'none';
+                this.theoryDurations[0].value = '1.5';
+                this.theoryDurations[1].value = '1.5';
+            }
+        });
+    },
+    
+    addCourse: function() {
+        const code = this.courseCodeInput.value.trim();
+        const title = this.courseTitleInput.value.trim();
+        const type = this.courseTypeInput.value;
+        const faculty = this.facultyInput.value.trim();
+        const room = this.roomInput.value.trim();
+        
+        if (!code || !title || !faculty) {
+            showToast('Please fill all required fields', 'error');
+            return;
+        }
+        
+        const sessions = [];
+        if (type === 'lab') {
+            const day = this.labDay.value;
+            const time = this.labTime.value;
+            const duration = parseFloat(this.labDuration.value);
             
-            // Get all session inputs
-            this.theoryDays = this.theorySessionsContainer.querySelectorAll('.class-day');
-            this.theoryTimes = this.theorySessionsContainer.querySelectorAll('.class-time');
-            this.theoryDurations = this.theorySessionsContainer.querySelectorAll('.class-duration');
-            
-            this.labDay = this.labSessionContainer.querySelector('.class-day');
-            this.labTime = this.labSessionContainer.querySelector('.class-time');
-            this.labDuration = this.labSessionContainer.querySelector('.class-duration');
-        },
-        
-        bindEvents: function() {
-            this.addCourseBtn.addEventListener('click', this.addCourse.bind(this));
-            this.generateBtn.addEventListener('click', this.generateRoutine.bind(this));
-            this.printBtn.addEventListener('click', this.printRoutine.bind(this));
-            this.clearBtn.addEventListener('click', this.clearAll.bind(this));
-        },
-        
-        setupCourseTypeToggle: function() {
-            this.courseTypeInput.addEventListener('change', () => {
-                if (this.courseTypeInput.value === 'lab') {
-                    this.theorySessionsContainer.style.display = 'none';
-                    this.labSessionContainer.style.display = 'block';
-                    this.labDuration.value = '3';
-                } else {
-                    this.theorySessionsContainer.style.display = 'block';
-                    this.labSessionContainer.style.display = 'none';
-                    this.theoryDurations[0].value = '1.5';
-                    this.theoryDurations[1].value = '1.5';
-                }
-            });
-        },
-        
-        addCourse: function() {
-            const code = this.courseCodeInput.value.trim();
-            const title = this.courseTitleInput.value.trim();
-            const type = this.courseTypeInput.value;
-            const faculty = this.facultyInput.value.trim();
-            const room = this.roomInput.value.trim();
-            
-            if (!code || !title || !faculty) {
-                showToast('Please fill all required fields', 'error');
+            if (!day || !time || isNaN(duration)) {
+                showToast('Please fill all lab session details', 'error');
                 return;
             }
             
-            const sessions = [];
-            if (type === 'lab') {
-                const day = this.labDay.value;
-                const time = this.labTime.value;
-                const duration = parseFloat(this.labDuration.value);
+            sessions.push({
+                day,
+                time,
+                duration,
+                isLab: true
+            });
+        } else {
+            for (let i = 0; i < this.theoryDays.length; i++) {
+                const day = this.theoryDays[i].value;
+                const time = this.theoryTimes[i].value;
+                const duration = parseFloat(this.theoryDurations[i].value);
                 
-                if (!day || !time || isNaN(duration)) {
-                    showToast('Please fill all lab session details', 'error');
-                    return;
-                }
+                if (!day || !time || isNaN(duration)) continue;
                 
                 sessions.push({
                     day,
                     time,
                     duration,
-                    isLab: true
+                    isLab: false
                 });
-            } else {
-                for (let i = 0; i < this.theoryDays.length; i++) {
-                    const day = this.theoryDays[i].value;
-                    const time = this.theoryTimes[i].value;
-                    const duration = parseFloat(this.theoryDurations[i].value);
-                    
-                    if (!day || !time || isNaN(duration)) continue;
-                    
-                    sessions.push({
-                        day,
-                        time,
-                        duration,
-                        isLab: false
-                    });
-                }
-                
-                if (sessions.length === 0) {
-                    showToast('Please add at least one class session', 'error');
-                    return;
-                }
             }
             
-            const course = {
-                id: Date.now(),
-                code,
-                title,
-                type,
-                faculty,
-                room,
-                sessions
-            };
-            
-            this.courses.push(course);
-            this.renderCourseList();
-            this.clearForm();
-            showToast('Course added successfully!', 'success');
-        },
-        
-        renderCourseList: function() {
-            this.courseList.innerHTML = '';
-            
-            if (this.courses.length === 0) {
-                this.courseList.innerHTML = '<div class="empty-message">No courses added yet</div>';
+            if (sessions.length === 0) {
+                showToast('Please add at least one class session', 'error');
                 return;
             }
+        }
+        
+        const course = {
+            id: Date.now(),
+            code,
+            title,
+            type,
+            faculty,
+            room,
+            sessions
+        };
+        
+        this.courses.push(course);
+        this.renderCourseList();
+        this.clearForm();
+        showToast('Course added successfully!', 'success');
+        
+        // Auto-generate routine when courses are added
+        if (this.courses.length > 0) {
+            this.generateRoutine();
+        }
+    },
+    
+    renderCourseList: function() {
+        this.courseList.innerHTML = '';
+        
+        if (this.courses.length === 0) {
+            this.courseList.innerHTML = '<div class="empty-message">No courses added yet</div>';
+            return;
+        }
+        
+        this.courses.forEach(course => {
+            const courseItem = document.createElement('div');
+            courseItem.className = 'course-item';
+            courseItem.dataset.id = course.id;
             
-            this.courses.forEach(course => {
-                const courseItem = document.createElement('div');
-                courseItem.className = 'course-item';
-                courseItem.dataset.id = course.id;
-                
-                const sessionsText = course.sessions.map(session => {
-                    return `${session.day} at ${session.time} (${session.duration}hr${session.isLab ? ' lab' : ''})`;
-                }).join(', ');
-                
-                courseItem.innerHTML = `
-                    <div class="course-item-info">
-                        <div>
-                            <strong>${course.code}</strong>
-                            <span class="course-item-type ${course.type}">${course.type === 'theory' ? 'Theory' : 'Lab'}</span>
-                        </div>
-                        <div class="course-item-sessions">${sessionsText}</div>
-                        <div>${course.faculty} ${course.room ? '· Room: ' + course.room : ''}</div>
+            const sessionsText = course.sessions.map(session => {
+                return `${session.day} at ${session.time} (${session.duration}hr${session.isLab ? ' lab' : ''})`;
+            }).join(', ');
+            
+            courseItem.innerHTML = `
+                <div class="course-item-info">
+                    <div>
+                        <strong>${course.code}</strong>
+                        <span class="course-item-type ${course.type}">${course.type === 'theory' ? 'Theory' : 'Lab'}</span>
                     </div>
-                    <div class="course-item-actions">
-                        <button class="edit-btn" title="Edit course">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="delete-btn" title="Delete course">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `;
-                
-                courseItem.querySelector('.delete-btn').addEventListener('click', () => {
-                    this.deleteCourse(course.id);
-                });
-                
-                courseItem.querySelector('.edit-btn').addEventListener('click', () => {
-                    this.editCourse(course.id);
-                });
-                
-                this.courseList.appendChild(courseItem);
+                    <div class="course-item-sessions">${sessionsText}</div>
+                    <div>${course.faculty} ${course.room ? '· Room: ' + course.room : ''}</div>
+                </div>
+                <div class="course-item-actions">
+                    <button class="edit-btn" title="Edit course">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="delete-btn" title="Delete course">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            courseItem.querySelector('.delete-btn').addEventListener('click', () => {
+                this.deleteCourse(course.id);
             });
-        },
+            
+            courseItem.querySelector('.edit-btn').addEventListener('click', () => {
+                this.editCourse(course.id);
+            });
+            
+            this.courseList.appendChild(courseItem);
+        });
+    },
+    
+    deleteCourse: function(id) {
+        this.courses = this.courses.filter(course => course.id !== id);
+        this.renderCourseList();
+        showToast('Course deleted', 'info');
         
-        deleteCourse: function(id) {
-            this.courses = this.courses.filter(course => course.id !== id);
-            this.renderCourseList();
-            showToast('Course deleted', 'info');
-        },
+        // Regenerate routine after deletion
+        if (this.courses.length > 0) {
+            this.generateRoutine();
+        } else {
+            this.clearRoutineDisplay();
+        }
+    },
+    
+    editCourse: function(id) {
+        const course = this.courses.find(c => c.id === id);
+        if (!course) return;
         
-        editCourse: function(id) {
-            const course = this.courses.find(c => c.id === id);
-            if (!course) return;
-            
-            this.courseCodeInput.value = course.code;
-            this.courseTitleInput.value = course.title;
-            this.courseTypeInput.value = course.type;
-            this.facultyInput.value = course.faculty;
-            this.roomInput.value = course.room || '';
-            
-            if (course.type === 'lab') {
-                this.theorySessionsContainer.style.display = 'none';
-                this.labSessionContainer.style.display = 'block';
-                
-                const session = course.sessions[0];
-                this.labDay.value = session.day;
-                this.labTime.value = session.time;
-                this.labDuration.value = session.duration;
-            } else {
-                this.theorySessionsContainer.style.display = 'block';
-                this.labSessionContainer.style.display = 'none';
-                
-                for (let i = 0; i < course.sessions.length && i < 2; i++) {
-                    const session = course.sessions[i];
-                    this.theoryDays[i].value = session.day;
-                    this.theoryTimes[i].value = session.time;
-                    this.theoryDurations[i].value = session.duration;
-                }
-            }
-            
-            this.deleteCourse(id);
-            this.courseCodeInput.focus();
-        },
+        this.courseCodeInput.value = course.code;
+        this.courseTitleInput.value = course.title;
+        this.courseTypeInput.value = course.type;
+        this.facultyInput.value = course.faculty;
+        this.roomInput.value = course.room || '';
         
-        clearForm: function() {
-            this.courseCodeInput.value = '';
-            this.courseTitleInput.value = '';
-            this.courseTypeInput.value = 'theory';
-            this.facultyInput.value = '';
-            this.roomInput.value = '';
+        if (course.type === 'lab') {
+            this.theorySessionsContainer.style.display = 'none';
+            this.labSessionContainer.style.display = 'block';
             
+            const session = course.sessions[0];
+            this.labDay.value = session.day;
+            this.labTime.value = session.time;
+            this.labDuration.value = session.duration;
+        } else {
             this.theorySessionsContainer.style.display = 'block';
             this.labSessionContainer.style.display = 'none';
             
-            this.theoryDays[0].value = 'Sunday';
-            this.theoryTimes[0].value = '08:00';
-            this.theoryDurations[0].value = '1.5';
-            
-            this.theoryDays[1].value = 'Sunday';
-            this.theoryTimes[1].value = '09:30';
-            this.theoryDurations[1].value = '1.5';
-            
-            this.labDay.value = 'Sunday';
-            this.labTime.value = '08:00';
-            this.labDuration.value = '3';
-            
-            this.courseCodeInput.focus();
-        },
-        
-        generateRoutine: function() {
-            if (this.courses.length === 0) {
-                showToast('Please add at least one course', 'error');
-                return;
+            for (let i = 0; i < course.sessions.length && i < 2; i++) {
+                const session = course.sessions[i];
+                this.theoryDays[i].value = session.day;
+                this.theoryTimes[i].value = session.time;
+                this.theoryDurations[i].value = session.duration;
             }
+        }
+        
+        this.deleteCourse(id);
+        this.courseCodeInput.focus();
+    },
+    
+    clearForm: function() {
+        this.courseCodeInput.value = '';
+        this.courseTitleInput.value = '';
+        this.courseTypeInput.value = 'theory';
+        this.facultyInput.value = '';
+        this.roomInput.value = '';
+        
+        this.theorySessionsContainer.style.display = 'block';
+        this.labSessionContainer.style.display = 'none';
+        
+        this.theoryDays[0].value = 'Sunday';
+        this.theoryTimes[0].value = '08:00';
+        this.theoryDurations[0].value = '1.5';
+        
+        this.theoryDays[1].value = 'Sunday';
+        this.theoryTimes[1].value = '09:30';
+        this.theoryDurations[1].value = '1.5';
+        
+        this.labDay.value = 'Sunday';
+        this.labTime.value = '08:00';
+        this.labDuration.value = '1.5';
+        
+        this.courseCodeInput.focus();
+    },
+    
+    generateRoutine: function() {
+        if (this.courses.length === 0) {
+            this.clearRoutineDisplay();
+            return;
+        }
 
-            const days = [
-                { name: 'Sunday', abbr: 'S' },
-                { name: 'Monday', abbr: 'M' },
-                { name: 'Tuesday', abbr: 'T' },
-                { name: 'Wednesday', abbr: 'W' },
-                { name: 'Thursday', abbr: 'R' }
-            ];
+        const days = [
+            { name: 'Sunday', abbr: 'Sun' },
+            { name: 'Monday', abbr: 'Mon' },
+            { name: 'Tuesday', abbr: 'Tue' },
+            { name: 'Wednesday', abbr: 'Wed' },
+            { name: 'Thursday', abbr: 'Thu' }
+        ];
 
-            const timeSlots = [
-                { start: '8:30', end: '10:00', label: '8:30 - 10:00' },
-                { start: '10:10', end: '11:40', label: '10:10 - 11:40' },
-                { start: '11:50', end: '13:20', label: '11:50 - 1:20' },
-                { start: '13:30', end: '15:00', label: '1:30 - 3:00' },
-                { start: '15:10', end: '16:40', label: '3:10 - 4:40' },
-                { start: '16:50', end: '18:20', label: '4:50 - 6:20' }
-            ];
+        const timeSlots = [
+            { start: '8:30', end: '10:00', label: '8:30-10:00' },
+            { start: '10:10', end: '11:40', label: '10:10-11:40' },
+            { start: '11:50', end: '13:20', label: '11:50-1:20' },
+            { start: '13:30', end: '15:00', label: '1:30-3:00' },
+            { start: '15:10', end: '16:40', label: '3:10-4:40' },
+            { start: '16:50', end: '18:20', label: '4:50-6:20' }
+        ];
 
-            // Create a 2D array to represent the routine table
-            const routineGrid = days.map(day => {
-                return timeSlots.map(slot => {
-                    return {
-                        courses: [],
-                        rendered: false
-                    };
-                });
-            });
+        // Create a grid to represent the routine table
+        const routineGrid = days.map(() => {
+            return timeSlots.map(() => ({
+                courses: [],
+                rendered: false,
+                rowspan: 1
+            }));
+        });
 
-            // Populate the grid with courses
-            this.courses.forEach(course => {
-                course.sessions.forEach((session, sessionIndex) => {
-                    const dayIndex = days.findIndex(d => d.name === session.day);
-                    if (dayIndex === -1) return;
+        // First pass: Populate the grid with exact matches
+        this.courses.forEach(course => {
+            course.sessions.forEach((session, sessionIndex) => {
+                const dayIndex = days.findIndex(d => d.name === session.day);
+                if (dayIndex === -1) return;
 
-                    const sessionStart = this.timeToMinutes(session.time);
-                    const sessionEnd = sessionStart + (session.duration * 60);
-
-                    timeSlots.forEach((slot, slotIndex) => {
-                        const slotStart = this.timeToMinutes(slot.start);
-                        const slotEnd = this.timeToMinutes(slot.end);
-
-                        // Check if session overlaps with this time slot
-                        if (sessionStart < slotEnd && sessionEnd > slotStart) {
-                            routineGrid[dayIndex][slotIndex].courses.push({
-                                course,
-                                session,
-                                sessionIndex
-                            });
-                        }
-                    });
-                });
-            });
-
-            // Generate HTML from the grid
-            let html = `
-                <div class="routine-table-container">
-                    <table class="routine-table">
-                        <thead>
-                            <tr>
-                                <th class="day-col">Days</th>
-                                ${timeSlots.map(slot => `<th>${slot.label}</th>`).join('')}
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
-            days.forEach((day, dayIndex) => {
-                html += `<tr><td class="day-col">${day.name} (${day.abbr})</td>`;
-                
-                timeSlots.forEach((slot, slotIndex) => {
-                    const cell = routineGrid[dayIndex][slotIndex];
-                    
-                    if (cell.rendered || cell.courses.length === 0) {
-                        // Skip if already rendered or no courses
-                        html += cell.rendered ? '' : '<td></td>';
-                        return;
-                    }
-
-                    // Find the best matching course for this slot
-                    const bestMatch = this.findBestTimeMatch(cell.courses, slot.start, slot.end);
-                    if (!bestMatch) {
-                        html += '<td></td>';
-                        return;
-                    }
-
-                    const { course, session, sessionIndex } = bestMatch;
-                    const isLab = course.type === 'lab';
-                    const roomPrefix = isLab ? 'Lab' : 'R';
-                    const sectionInfo = isLab ? 'Lab' : (course.sessions.length > 1 ? 'Sec' + (sessionIndex + 1) : '');
-
-                    // Calculate rowspan (how many slots this session spans)
-                    const durationMinutes = session.duration * 60;
-                    const slotDuration = this.timeToMinutes(slot.end) - this.timeToMinutes(slot.start);
-                    const rowspan = Math.max(1, Math.round(durationMinutes / slotDuration));
-
-                    // Mark subsequent slots as rendered
-                    for (let i = 0; i < rowspan && slotIndex + i < timeSlots.length; i++) {
-                        routineGrid[dayIndex][slotIndex + i].rendered = true;
-                    }
-
-                    html += `
-                        <td class="course-slot" rowspan="${rowspan}">
-                            <div class="course-block ${isLab ? 'lab-block' : ''}">
-                                <div class="course-code">${course.code} ${sectionInfo}</div>
-                                <div class="course-room">${roomPrefix}: ${course.room || 'N/A'}</div>
-                                ${course.faculty ? `<div class="course-faculty">${course.faculty}</div>` : ''}
-                            </div>
-                        </td>
-                    `;
-                });
-                
-                html += '</tr>';
-            });
-
-            html += `
-                        </tbody>
-                    </table>
-                </div>
-            `;
-
-            this.routineDisplay.innerHTML = html;
-            this.printBtn.disabled = false;
-            showToast('Routine generated successfully!', 'success');
-        },
-
-        findBestTimeMatch: function(courses, startTime, endTime) {
-            let bestMatch = null;
-            let bestScore = -1;
-            
-            const slotStart = this.timeToMinutes(startTime);
-            const slotEnd = this.timeToMinutes(endTime);
-            const slotDuration = slotEnd - slotStart;
-            
-            courses.forEach(courseData => {
-                const { course, session } = courseData;
                 const sessionStart = this.timeToMinutes(session.time);
                 const sessionEnd = sessionStart + (session.duration * 60);
+
+                // Find the best matching time slot
+                let bestSlotIndex = -1;
+                let bestOverlap = 0;
                 
-                // Calculate overlap score
-                const overlapStart = Math.max(sessionStart, slotStart);
-                const overlapEnd = Math.min(sessionEnd, slotEnd);
-                const overlapDuration = Math.max(0, overlapEnd - overlapStart);
-                
-                // Calculate how well this session fits the slot
-                const score = overlapDuration / slotDuration;
-                
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestMatch = courseData;
+                timeSlots.forEach((slot, slotIndex) => {
+                    const slotStart = this.timeToMinutes(slot.start);
+                    const slotEnd = this.timeToMinutes(slot.end);
+                    
+                    // Calculate overlap
+                    const overlapStart = Math.max(sessionStart, slotStart);
+                    const overlapEnd = Math.min(sessionEnd, slotEnd);
+                    const overlap = Math.max(0, overlapEnd - overlapStart);
+                    
+                    if (overlap > bestOverlap) {
+                        bestOverlap = overlap;
+                        bestSlotIndex = slotIndex;
+                    }
+                });
+
+                if (bestSlotIndex !== -1) {
+                    // Calculate how many slots this session spans
+                    const slotDuration = this.timeToMinutes(timeSlots[bestSlotIndex].end) - 
+                                        this.timeToMinutes(timeSlots[bestSlotIndex].start);
+                    const rowspan = Math.ceil(session.duration * 60 / slotDuration);
+                    
+                    routineGrid[dayIndex][bestSlotIndex].courses.push({
+                        course,
+                        session,
+                        sessionIndex
+                    });
+                    routineGrid[dayIndex][bestSlotIndex].rowspan = rowspan;
                 }
             });
-            
-            return bestMatch;
-        },
+        });
 
-        timeToMinutes: function(timeString) {
-            // Handle both "HH:MM" and "H:MM" formats
-            const [hours, minutes] = timeString.split(':').map(Number);
-            return hours * 60 + minutes;
-        },
-        
-        printRoutine: function() {
-            const printContent = this.routineDisplay.innerHTML;
-            const printWindow = window.open('', '_blank');
+        // Generate HTML from the grid
+        let html = `
+            <div class="routine-table-container">
+                <table class="routine-table">
+                    <thead>
+                        <tr>
+                            <th class="day-col">Day/Time</th>
+                            ${timeSlots.map(slot => `<th>${slot.label}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        days.forEach((day, dayIndex) => {
+            html += `<tr><td class="day-col">${day.abbr}</td>`;
             
-            printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                    <head>
-                        <title>Class Routine</title>
-                        <style>
-                            body { font-family: Arial, sans-serif; }
-                            .routine-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                            .routine-table th, .routine-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-                            .routine-table th { background-color: #0056b3; color: white; }
-                            .routine-table .day-col { background-color: #f1f1f1; font-weight: bold; width: 100px; }
-                            .course-block { background-color: #e7f5ff; border-radius: 4px; padding: 5px; margin: 2px; }
-                            .lab-block { background-color: #fff3bf; }
-                            .course-code { font-weight: bold; font-size: 0.9rem; }
-                            .course-room { font-size: 0.8rem; }
-                            .course-faculty { font-size: 0.8rem; font-style: italic; }
-                            h1 { color: #0056b3; text-align: center; margin-bottom: 5px; }
-                            .print-header { margin-bottom: 20px; }
-                            .print-footer { text-align: center; margin-top: 20px; font-size: 0.8rem; color: #666; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="print-header">
-                            <h1>Class Routine and Office Hour, Spring 2025</h1>
+            timeSlots.forEach((slot, slotIndex) => {
+                const cell = routineGrid[dayIndex][slotIndex];
+                
+                if (cell.rendered || cell.courses.length === 0) {
+                    html += cell.rendered ? '' : '<td></td>';
+                    return;
+                }
+
+                // Take the first course (we've already matched them properly)
+                const courseData = cell.courses[0];
+                if (!courseData) {
+                    html += '<td></td>';
+                    return;
+                }
+
+                const { course, session, sessionIndex } = courseData;
+                const isLab = course.type === 'lab';
+                const roomPrefix = isLab ? 'Lab' : 'R';
+                const sectionInfo = isLab ? 'Lab' : (course.sessions.length > 1 ? 'Sec' + (sessionIndex + 1) : '');
+
+                // Mark subsequent slots as rendered
+                for (let i = 1; i < cell.rowspan; i++) {
+                    if (slotIndex + i < timeSlots.length) {
+                        routineGrid[dayIndex][slotIndex + i].rendered = true;
+                    }
+                }
+
+                html += `
+                    <td class="course-slot" rowspan="${cell.rowspan}">
+                        <div class="course-block ${isLab ? 'lab-block' : ''}">
+                            <div class="course-code">${course.code} ${sectionInfo}</div>
+                            <div class="course-room">${roomPrefix}: ${course.room || 'N/A'}</div>
+                            <div class="course-faculty">${course.faculty || ''}</div>
                         </div>
-                        ${printContent}
-                        <div class="print-footer">
-                            Generated on ${new Date().toLocaleDateString()}
-                        </div>
-                        <script>
-                            window.onload = function() {
-                                window.print();
-                                setTimeout(function() { window.close(); }, 1000);
-                            };
-                        </script>
-                    </body>
-                </html>
-            `);
-            printWindow.document.close();
-        },
-        
-        clearAll: function() {
-            this.courses = [];
-            this.renderCourseList();
-            this.routineDisplay.innerHTML = `
-                <div class="placeholder">
-                    <i class="fas fa-calendar"></i>
-                    <p>Your generated routine will appear here</p>
-                </div>
-            `;
-            this.printBtn.disabled = true;
-            showToast('All courses cleared', 'info');
+                    </td>
+                `;
+            });
+            
+            html += '</tr>';
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        this.routineDisplay.innerHTML = html;
+        this.printBtn.disabled = false;
+        this.downloadBtn.disabled = false;
+    },
+    
+    clearRoutineDisplay: function() {
+        this.routineDisplay.innerHTML = `
+            <div class="placeholder">
+                <i class="fas fa-calendar"></i>
+                <p>Your generated routine will appear here</p>
+            </div>
+        `;
+        this.printBtn.disabled = true;
+        this.downloadBtn.disabled = true;
+    },
+
+    timeToMinutes: function(timeString) {
+        // Handle both "HH:MM" and "H:MM" formats
+        const [hours, minutes] = timeString.split(':').map(Number);
+        return hours * 60 + minutes;
+    },
+    
+    printRoutine: function() {
+        if (this.courses.length === 0) {
+            showToast('No routine to print', 'error');
+            return;
         }
-    };
+
+        const printContent = this.routineDisplay.innerHTML;
+        const printWindow = window.open('', '_blank');
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>Class Routine</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; }
+                        .routine-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                        .routine-table th, .routine-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+                        .routine-table th { background-color: #0056b3; color: white; }
+                        .routine-table .day-col { background-color: #f1f1f1; font-weight: bold; width: 100px; }
+                        .course-block { background-color: #e7f5ff; border-radius: 4px; padding: 5px; margin: 2px; }
+                        .lab-block { background-color: #fff3bf; }
+                        .course-code { font-weight: bold; font-size: 0.9rem; }
+                        .course-room { font-size: 0.8rem; }
+                        .course-faculty { font-size: 0.8rem; font-style: italic; }
+                        h1 { color: #0056b3; text-align: center; margin-bottom: 5px; }
+                        .print-header { margin-bottom: 20px; }
+                        .print-footer { text-align: center; margin-top: 20px; font-size: 0.8rem; color: #666; }
+                    </style>
+                </head>
+                <body>
+                    <div class="print-header">
+                        <h1>Class Routine and Office Hour, Spring 2025</h1>
+                    </div>
+                    ${printContent}
+                    <div class="print-footer">
+                        Generated on ${new Date().toLocaleDateString()}
+                    </div>
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(function() { window.close(); }, 1000);
+                        };
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+    },
+    
+    clearAll: function() {
+        this.courses = [];
+        this.renderCourseList();
+        this.clearRoutineDisplay();
+        showToast('All courses cleared', 'info');
+    },
+
+    downloadRoutineAsImage: function() {
+    if (this.courses.length === 0) {
+        showToast('Please generate a routine first', 'error');
+        return;
+    }
+
+    const routineContainer = document.querySelector('.routine-table-container');
+    
+    if (!routineContainer) {
+        showToast('No routine to download', 'error');
+        return;
+    }
+
+    showToast('Generating image... please wait', 'info');
+    
+    // Store original styles
+    const originalOverflow = routineContainer.style.overflow;
+    const originalWidth = routineContainer.style.width;
+    
+    // Temporarily adjust styles for capture
+    routineContainer.style.overflow = 'visible';
+    routineContainer.style.width = 'fit-content';
+    
+    // Temporarily hide the print button to avoid it appearing in the image
+    const printBtn = document.getElementById('print-routine');
+    const originalDisplay = printBtn.style.display;
+    printBtn.style.display = 'none';
+
+    html2canvas(routineContainer, {
+        scale: 2,
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: routineContainer.scrollWidth,
+        windowHeight: routineContainer.scrollHeight,
+        backgroundColor: getComputedStyle(document.body).getPropertyValue('--card-bg')
+    }).then(canvas => {
+        // Restore original styles
+        routineContainer.style.overflow = originalOverflow;
+        routineContainer.style.width = originalWidth;
+        printBtn.style.display = originalDisplay;
+
+        // Create download link
+        const link = document.createElement('a');
+        link.download = 'EWU_Routine_' + new Date().toISOString().slice(0, 10) + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        showToast('Routine downloaded as image', 'success');
+    }).catch(err => {
+        // Restore original styles
+        routineContainer.style.overflow = originalOverflow;
+        routineContainer.style.width = originalWidth;
+        printBtn.style.display = originalDisplay;
+        
+        console.error('Error generating image:', err);
+        showToast('Failed to generate image', 'error');
+    });
+}
+};
+
+    
 
     // Toast notification function
     function showToast(message, type) {
