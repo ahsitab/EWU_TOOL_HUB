@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,360 +8,391 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <header>
-        <div class="container">
+    <div id="greeting-page">
+        <div class="greeting-container">
             <div class="logo-container">
                 <img src="l-1.png" alt="EWU Logo" class="logo">
                 <h1>EWU Tools Hub</h1>
             </div>
-            <nav>
-                <ul>
-                    <li><a href="#cgpa-calculator" class="active">CGPA Calculator</a></li>
-                    <li><a href="#flow-charts">Course Flow</a></li>
-                    <li><a href="#fee-calculator">Fee Calculator</a></li>
-                    <li><a href="#routine-generator">Routine Generator</a></li>
-                </ul>
-            </nav>
+            <div class="greeting-message">
+                <h2>  Welcome to EWU Tools Hub</h2>
+                <p>Select a tool to get started with your academic journey at East West University</p>
+            </div>
+            <div class="tool-buttons">
+                <button class="tool-btn" data-target="cgpa-calculator">
+                    <i class="fas fa-calculator"></i>
+                    <span>CGPA Calculator</span>
+                </button>
+                <button class="tool-btn" data-target="flow-charts">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Course Flow</span>
+                </button>
+                <button class="tool-btn" data-target="fee-calculator">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>Fee Calculator</span>
+                </button>
+                <button class="tool-btn" data-target="routine-generator">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Routine Generator</span>
+                </button>
+            </div>
         </div>
-    </header>
+    </div>
 
-    <main class="container">
-        <!-- CGPA Calculator Section -->
-        <section id="cgpa-calculator" class="tool-section">
-            <h2><i class="fas fa-calculator"></i> CGPA Calculator</h2>
-            <div class="calculator-container">
-                <div class="input-section">
-                    <div class="form-group">
-                        <label for="current-cgpa">Current CGPA (if any):</label>
-                        <input type="number" id="current-cgpa" step="0.01" min="0" max="4.5" placeholder="e.g. 3.50">
-                    </div>
-                    <div class="form-group">
-                        <label for="completed-credits">Completed Credits:</label>
-                        <input type="number" id="completed-credits" min="0" placeholder="e.g. 60">
+    <div id="main-content" style="display: none;">
+        <header>
+            <div class="container">
+                <div class="logo-container">
+                    <img src="l-1.png" alt="EWU Logo" class="logo">
+                    <h1>EWU Tools Hub</h1>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#cgpa-calculator" class="active">CGPA Calculator</a></li>
+                        <li><a href="#flow-charts">Course Flow</a></li>
+                        <li><a href="#fee-calculator">Fee Calculator</a></li>
+                        <li><a href="#routine-generator">Routine Generator</a></li>
+                    </ul>
+                </nav>
+                <button id="back-to-home" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Home</button>
+            </div>
+        </header>
+
+        <main class="container">
+            <!-- CGPA Calculator Section -->
+            <section id="cgpa-calculator" class="tool-section">
+                <h2><i class="fas fa-calculator"></i> CGPA Calculator</h2>
+                <div class="calculator-container">
+                    <div class="input-section">
+                        <div class="form-group">
+                            <label for="current-cgpa">Current CGPA (if any):</label>
+                            <input type="number" id="current-cgpa" step="0.01" min="0" max="4.5" placeholder="e.g. 3.50">
+                        </div>
+                        <div class="form-group">
+                            <label for="completed-credits">Completed Credits:</label>
+                            <input type="number" id="completed-credits" min="0" placeholder="e.g. 60">
+                        </div>
+                        
+                        <h3>Current Semester Courses(GRADE & CREDIT)</h3>
+                        <div id="courses-container">
+                            <div class="course-row">
+                                <select class="course-grade">
+                                    <option value="">Select Grade</option>
+                                      <option value="4.0">A+ (4.0)</option>
+                                      <option value="3.75">A (3.75)</option>
+                                      <option value="3.5">A- (3.5)</option>
+                                      <option value="3.25">B+ (3.25)</option>
+                                      <option value="3.0">B (3.0)</option>
+                                      <option value="2.75">B- (2.75)</option>
+                                      <option value="2.5">C+ (2.5)</option>
+                                      <option value="2.25">C (2.25)</option>
+                                      <option value="2.0">D (2.0)</option>
+                                      <option value="0.0">F (0.0)</option>
+                                </select>
+                                <input type="number" class="course-credit" min="1" max="4.5" placeholder="Credits" value="3">
+                                <button class="remove-course"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <button id="add-course" class="btn"><i class="fas fa-plus"></i> Add Course</button>
+                        <button id="calculate-cgpa" class="btn calculate-btn">Calculate CGPA</button>
                     </div>
                     
-                    <h3>Current Semester Courses(GRADE & CREDIT)</h3>
-                    <div id="courses-container">
-                        <div class="course-row">
-                            <select class="course-grade">
-                                <option value="">Select Grade</option>
-                                <option value="4.0">A+</option>
-                                <option value="3.75">A</option>
-                                <option value="3.5">A-</option>
-                                <option value="3.25">B+</option>
-                                <option value="3.0">B</option>
-                                <option value="2.75">B-</option>
-                                <option value="2.50">C+</option>
-                                <option value="2.25">C</option>
-                                <option value="2.0">D</option>
-                                <option value="0.0">F</option>
+                    <div class="result-section">
+                        <h3>Results</h3>
+                        <div class="result-box">
+                            <div class="result-item">
+                                <span>Semester GPA:</span>
+                                <span id="semester-gpa">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span>New CGPA:</span>
+                                <span id="new-cgpa">-</span>
+                            </div>
+                        </div>
+                        <button id="reset-cgpa" class="btn reset-btn"><i class="fas fa-redo"></i> Reset</button>
+                        <button id="print-cgpa" class="btn print-btn"><i class="fas fa-print"></i> Print</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Course Flow Charts Section -->
+            <section id="flow-charts" class="tool-section">
+                <h2><i class="fas fa-project-diagram"></i> Course Flow Charts</h2>
+                <div class="flow-controls">
+                    <div class="form-group">
+                        <label for="department-select">Department:</label>
+                        <select id="department-select">
+                            <option value="">Select Department</option>
+                            <option value="cse">Computer Science & Engineering (CSE)</option>
+                            <option value="eee">Electrical & Electronic Engineering (EEE)</option>
+                            <option value="bba">Business Administration (BBA)</option>
+                            <option value="eco">Economics</option>
+                            <option value="eng">English</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="program-select">Program:</label>
+                        <select id="program-select">
+                            <option value="">Select Program</option>
+                            <option value="bsc">BSc</option>
+                            <option value="msc">MSc</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="flowchart-container">
+                    <div class="placeholder">
+                        <i class="fas fa-university"></i>
+                        <p>Select your department and program to view the course flow chart</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tuition Fee Calculator Section -->
+            <section id="fee-calculator" class="tool-section">
+                <h2><i class="fas fa-money-bill-wave"></i> Tuition Fee Calculator</h2>
+                <div class="calculator-container">
+                    <div class="input-section">
+                        <div class="form-group">
+                            <label for="fee-department">Department:</label>
+                            <select id="fee-department">
+                                <option value="">Select Department</option>
+                                <option value="cse">Computer Science & Engineering (CSE)</option>
+                                <option value="eee">Electrical & Electronic Engineering (EEE)</option>
+                                <option value="bba">Business Administration (BBA)</option>
+                                <option value="eco">Economics</option>
+                                <option value="eng">English</option>
                             </select>
-                            <input type="number" class="course-credit" min="1" max="4.5" placeholder="Credits" value="3">
-                            <button class="remove-course"><i class="fas fa-trash"></i></button>
                         </div>
+                        
+                        <div class="form-group">
+                            <label for="semester-type">Semester Type:</label>
+                            <select id="semester-type">
+                                <option value="regular">Regular</option>
+                                <option value="summer">Summer</option>
+                            </select>
+                        </div>
+                        
+                        <h3>Add Courses</h3>
+                        <div id="fee-courses-container">
+                            <div class="course-fee-row">
+                                <div class="form-group">
+                                    <label>Course Code:</label>
+                                    <input type="text" class="course-code" placeholder="e.g., CSE101">
+                                </div>
+                                <div class="form-group">
+                                    <label>Credits:</label>
+                                    <input type="number" class="course-credit" min="1" max="4" value="3">
+                                </div>
+                                <div class="form-group">
+                                    <label>Per Credit Fee:</label>
+                                    <input type="number" class="course-per-credit" min="0" placeholder="Auto from dept">
+                                </div>
+                                <button class="remove-course-fee"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <button id="add-course-fee" class="btn"><i class="fas fa-plus"></i> Add Course</button>
+                        
+                        <h3>Other Fees</h3>
+                        <div class="form-group">
+                            <label for="registration-fee">Registration Fee:</label>
+                            <input type="number" id="registration-fee" min="0" value="5000">
+                        </div>
+                        <div class="form-group">
+                            <label for="library-fee">Library Fee:</label>
+                            <input type="number" id="library-fee" min="0" value="2000">
+                        </div>
+                        <div class="form-group">
+                            <label for="activity-fee">Activity Fee:</label>
+                            <input type="number" id="activity-fee" min="0" value="1500">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="scholarship">Scholarship (%):</label>
+                            <input type="number" id="scholarship" min="0" max="100" value="0">
+                        </div>
+                        
+                        <button id="calculate-fee" class="btn calculate-btn">Calculate Total Fees</button>
                     </div>
-                    <button id="add-course" class="btn"><i class="fas fa-plus"></i> Add Course</button>
-                    <button id="calculate-cgpa" class="btn calculate-btn">Calculate CGPA</button>
-                </div>
-                
-                <div class="result-section">
-                    <h3>Results</h3>
-                    <div class="result-box">
-                        <div class="result-item">
-                            <span>Semester GPA:</span>
-                            <span id="semester-gpa">-</span>
+                    
+                    <div class="result-section">
+                        <h3>Fee Breakdown</h3>
+                        <div class="result-box">
+                            <div class="result-item">
+                                <span>Total Credits:</span>
+                                <span id="total-credits">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span>Total Tuition Fee:</span>
+                                <span id="tuition-fee">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span>Other Fees:</span>
+                                <span id="other-fees">-</span>
+                            </div>
+                            <div class="result-item">
+                                <span>Scholarship:</span>
+                                <span id="scholarship-amount">-</span>
+                            </div>
+                            <div class="result-item total">
+                                <span>Total Payable:</span>
+                                <span id="total-fee">-</span>
+                            </div>
                         </div>
-                        <div class="result-item">
-                            <span>New CGPA:</span>
-                            <span id="new-cgpa">-</span>
+                        
+                        <div class="course-fee-list">
+                            <h4>Course Details</h4>
+                            <div id="course-fee-details">
+                                <!-- Course details will be shown here -->
+                            </div>
                         </div>
+                        
+                        <button id="reset-fee" class="btn reset-btn"><i class="fas fa-redo"></i> Reset</button>
+                        <button id="print-fee" class="btn print-btn"><i class="fas fa-print"></i> Print</button>
                     </div>
-                    <button id="reset-cgpa" class="btn reset-btn"><i class="fas fa-redo"></i> Reset</button>
-                    <button id="print-cgpa" class="btn print-btn"><i class="fas fa-print"></i> Print</button>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- Course Flow Charts Section -->
-        <section id="flow-charts" class="tool-section">
-            <h2><i class="fas fa-project-diagram"></i> Course Flow Charts</h2>
-            <div class="flow-controls">
-                <div class="form-group">
-                    <label for="department-select">Department:</label>
-                    <select id="department-select">
-                        <option value="">Select Department</option>
-                        <option value="cse">Computer Science & Engineering (CSE)</option>
-                        <option value="eee">Electrical & Electronic Engineering (EEE)</option>
-                        <option value="bba">Business Administration (BBA)</option>
-                        <option value="eco">Economics</option>
-                        <option value="eng">English</option>
-                    </select>
+            <!-- Routine Generator Section -->
+            <section id="routine-generator" class="tool-section">
+                <h2><i class="fas fa-calendar-alt"></i> Routine Generator</h2>
+                <div class="routine-container">
+                    <div class="input-section">
+                        <div class="form-group">
+                            <label for="course-code">Course Code:</label>
+                            <input type="text" id="course-code" placeholder="e.g., CSE101">
+                        </div>
+                        <div class="form-group">
+                            <label for="course-title">Course Title:</label>
+                            <input type="text" id="course-title" placeholder="e.g., Structured Programming">
+                        </div>
+                        <div class="form-group">
+                            <label for="course-type">Course Type:</label>
+                            <select id="course-type">
+                                <option value="theory">Theory</option>
+                                <option value="lab">Lab</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Theory Sessions (shown by default) -->
+                        <div id="theory-sessions-container" class="class-days-container">
+                            <h3>Class Days & Times (Theory)</h3>
+                            <div class="class-session">
+                                <div class="form-group">
+                                    <label>Day 1:</label>
+                                    <select class="class-day">
+                                        <option value="Sunday">Sunday</option>
+                                        <option value="Monday">Monday</option>
+                                        <option value="Tuesday">Tuesday</option>
+                                        <option value="Wednesday">Wednesday</option>
+                                        <option value="Thursday">Thursday</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Time:</label>
+                                    <input type="time" class="class-time" value="08:00">
+                                </div>
+                                <div class="form-group">
+                                    <label>Duration (hours):</label>
+                                    <input type="number" class="class-duration" min="1" max="3" value="1.5" step="0.5">
+                                </div>
+                            </div>
+                            
+                            <div class="class-session">
+                                <div class="form-group">
+                                    <label>Day 2:</label>
+                                    <select class="class-day">
+                                        <option value="Sunday">Sunday</option>
+                                        <option value="Monday">Monday</option>
+                                        <option value="Tuesday">Tuesday</option>
+                                        <option value="Wednesday">Wednesday</option>
+                                        <option value="Thursday">Thursday</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Time:</label>
+                                    <input type="time" class="class-time" value="09:30">
+                                </div>
+                                <div class="form-group">
+                                    <label>Duration (hours):</label>
+                                    <input type="number" class="class-duration" min="1" max="3" value="1.5" step="0.5">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Lab Session (hidden by default) -->
+                        <div id="lab-session-container" class="class-days-container" style="display:none;">
+                            <h3>Lab Session</h3>
+                            <div class="class-session">
+                                <div class="form-group">
+                                    <label>Day:</label>
+                                    <select class="class-day">
+                                        <option value="Sunday">Sunday</option>
+                                        <option value="Monday">Monday</option>
+                                        <option value="Tuesday">Tuesday</option>
+                                        <option value="Wednesday">Wednesday</option>
+                                        <option value="Thursday">Thursday</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Time:</label>
+                                    <input type="time" class="class-time" value="08:00">
+                                </div>
+                                <div class="form-group">
+                                    <label>Duration (hours):</label>
+                                    <input type="number" class="class-duration" min="1" max="3" value="3" step="0.5">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="faculty-name">Faculty Name:</label>
+                            <input type="text" id="faculty-name" placeholder="e.g., Dr. Smith">
+                        </div>
+                        <div class="form-group">
+                            <label for="room-number">Room No:</label>
+                            <input type="text" id="room-number" placeholder="e.g., 502">
+                        </div>
+                        
+                        <button id="add-course-btn" class="btn"><i class="fas fa-plus"></i> Add Course</button>
+                        
+                        <h3>Your Courses</h3>
+                        <div id="course-list">
+                            <!-- Courses will be listed here -->
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button id="generate-routine" class="btn calculate-btn">Generate Routine</button>
+                            <button id="print-routine" class="btn print-btn"><i class="fas fa-print"></i> Print Routine</button>
+                            <button id="clear-routine" class="btn reset-btn"><i class="fas fa-redo"></i> Clear All</button>
+                        </div>
+                    </div>
+                    
+                    <div class="result-section">
+                        <h3>Weekly Class Routine</h3>
+                        <div id="routine-display">
+                            <div class="placeholder">
+                                <i class="fas fa-calendar"></i>
+                                <p>Your generated routine will appear here</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="program-select">Program:</label>
-                    <select id="program-select">
-                        <option value="">Select Program</option>
-                        <option value="bsc">BSc</option>
-                        <option value="msc">MSc</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div id="flowchart-container">
-                <div class="placeholder">
-                    <i class="fas fa-university"></i>
-                    <p>Select your department and program to view the course flow chart</p>
-                </div>
-            </div>
-        </section>
+            </section>
+        </main>
 
-        <!-- Tuition Fee Calculator Section -->
-<!-- Updated Tuition Fee Calculator Section -->
-<section id="fee-calculator" class="tool-section">
-    <h2><i class="fas fa-money-bill-wave"></i> Tuition Fee Calculator</h2>
-    <div class="calculator-container">
-        <div class="input-section">
-            <div class="form-group">
-                <label for="fee-department">Department:</label>
-                <select id="fee-department">
-                    <option value="">Select Department</option>
-                    <option value="cse">Computer Science & Engineering (CSE)</option>
-                    <option value="eee">Electrical & Electronic Engineering (EEE)</option>
-                    <option value="bba">Business Administration (BBA)</option>
-                    <option value="eco">Economics</option>
-                    <option value="eng">English</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="semester-type">Semester Type:</label>
-                <select id="semester-type">
-                    <option value="regular">Regular</option>
-                    <option value="summer">Summer</option>
-                </select>
-            </div>
-            
-            <h3>Add Courses</h3>
-            <div id="fee-courses-container">
-                <div class="course-fee-row">
-                    <div class="form-group">
-                        <label>Course Code:</label>
-                        <input type="text" class="course-code" placeholder="e.g., CSE101">
-                    </div>
-                    <div class="form-group">
-                        <label>Credits:</label>
-                        <input type="number" class="course-credit" min="1" max="4" value="3">
-                    </div>
-                    <div class="form-group">
-                        <label>Per Credit Fee:</label>
-                        <input type="number" class="course-per-credit" min="0" placeholder="Auto from dept">
-                    </div>
-                    <button class="remove-course-fee"><i class="fas fa-trash"></i></button>
+        <footer>
+            <div class="container">
+                <p>&copy; 2023 East West University Tools Hub | Developed for EWU Students</p>
+                <div class="footer-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fas fa-envelope"></i></a>
+                    <a href="https://www.ewubd.edu" target="_blank"><i class="fas fa-globe"></i></a>
                 </div>
             </div>
-            <button id="add-course-fee" class="btn"><i class="fas fa-plus"></i> Add Course</button>
-            
-            <h3>Other Fees</h3>
-            <div class="form-group">
-                <label for="registration-fee">Registration Fee:</label>
-                <input type="number" id="registration-fee" min="0" value="5000">
-            </div>
-            <div class="form-group">
-                <label for="library-fee">Library Fee:</label>
-                <input type="number" id="library-fee" min="0" value="2000">
-            </div>
-            <div class="form-group">
-                <label for="activity-fee">Activity Fee:</label>
-                <input type="number" id="activity-fee" min="0" value="1500">
-            </div>
-            
-            <div class="form-group">
-                <label for="scholarship">Scholarship (%):</label>
-                <input type="number" id="scholarship" min="0" max="100" value="0">
-            </div>
-            
-            <button id="calculate-fee" class="btn calculate-btn">Calculate Total Fees</button>
-        </div>
-        
-        <div class="result-section">
-            <h3>Fee Breakdown</h3>
-            <div class="result-box">
-                <div class="result-item">
-                    <span>Total Credits:</span>
-                    <span id="total-credits">-</span>
-                </div>
-                <div class="result-item">
-                    <span>Total Tuition Fee:</span>
-                    <span id="tuition-fee">-</span>
-                </div>
-                <div class="result-item">
-                    <span>Other Fees:</span>
-                    <span id="other-fees">-</span>
-                </div>
-                <div class="result-item">
-                    <span>Scholarship:</span>
-                    <span id="scholarship-amount">-</span>
-                </div>
-                <div class="result-item total">
-                    <span>Total Payable:</span>
-                    <span id="total-fee">-</span>
-                </div>
-            </div>
-            
-            <div class="course-fee-list">
-                <h4>Course Details</h4>
-                <div id="course-fee-details">
-                    <!-- Course details will be shown here -->
-                </div>
-            </div>
-            
-            <button id="reset-fee" class="btn reset-btn"><i class="fas fa-redo"></i> Reset</button>
-            <button id="print-fee" class="btn print-btn"><i class="fas fa-print"></i> Print</button>
-        </div>
+        </footer>
     </div>
-</section>
-
-        <!-- Routine Generator Section -->
-  <!-- Routine Generator Section -->
-<section id="routine-generator" class="tool-section">
-    <h2><i class="fas fa-calendar-alt"></i> Routine Generator</h2>
-    <div class="routine-container">
-        <div class="input-section">
-            <div class="form-group">
-                <label for="course-code">Course Code:</label>
-                <input type="text" id="course-code" placeholder="e.g., CSE101">
-            </div>
-            <div class="form-group">
-                <label for="course-title">Course Title:</label>
-                <input type="text" id="course-title" placeholder="e.g., Structured Programming">
-            </div>
-            <div class="form-group">
-                <label for="course-type">Course Type:</label>
-                <select id="course-type">
-                    <option value="theory">Theory</option>
-                    <option value="lab">Lab</option>
-                </select>
-            </div>
-            
-            <!-- Theory Sessions (shown by default) -->
-            <div id="theory-sessions-container" class="class-days-container">
-                <h3>Class Days & Times (Theory)</h3>
-                <div class="class-session">
-                    <div class="form-group">
-                        <label>Day 1:</label>
-                        <select class="class-day">
-                            <option value="Sunday">Sunday</option>
-                            <option value="Monday">Monday</option>
-                            <option value="Tuesday">Tuesday</option>
-                            <option value="Wednesday">Wednesday</option>
-                            <option value="Thursday">Thursday</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Time:</label>
-                        <input type="time" class="class-time" value="08:00">
-                    </div>
-                    <div class="form-group">
-                        <label>Duration (hours):</label>
-                        <input type="number" class="class-duration" min="1" max="3" value="1.5" step="0.5">
-                    </div>
-                </div>
-                
-                <div class="class-session">
-                    <div class="form-group">
-                        <label>Day 2:</label>
-                        <select class="class-day">
-                            <option value="Sunday">Sunday</option>
-                            <option value="Monday">Monday</option>
-                            <option value="Tuesday">Tuesday</option>
-                            <option value="Wednesday">Wednesday</option>
-                            <option value="Thursday">Thursday</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Time:</label>
-                        <input type="time" class="class-time" value="09:30">
-                    </div>
-                    <div class="form-group">
-                        <label>Duration (hours):</label>
-                        <input type="number" class="class-duration" min="1" max="3" value="1.5" step="0.5">
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Lab Session (hidden by default) -->
-            <div id="lab-session-container" class="class-days-container" style="display:none;">
-                <h3>Lab Session</h3>
-                <div class="class-session">
-                    <div class="form-group">
-                        <label>Day:</label>
-                        <select class="class-day">
-                            <option value="Sunday">Sunday</option>
-                            <option value="Monday">Monday</option>
-                            <option value="Tuesday">Tuesday</option>
-                            <option value="Wednesday">Wednesday</option>
-                            <option value="Thursday">Thursday</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Time:</label>
-                        <input type="time" class="class-time" value="08:00">
-                    </div>
-                    <div class="form-group">
-                        <label>Duration (hours):</label>
-                        <input type="number" class="class-duration" min="1" max="3" value="3" step="0.5">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="faculty-name">Faculty Name:</label>
-                <input type="text" id="faculty-name" placeholder="e.g., Dr. Smith">
-            </div>
-            <div class="form-group">
-                <label for="room-number">Room No:</label>
-                <input type="text" id="room-number" placeholder="e.g., 502">
-            </div>
-            
-            <button id="add-course-btn" class="btn"><i class="fas fa-plus"></i> Add Course</button>
-            
-            <h3>Your Courses</h3>
-            <div id="course-list">
-                <!-- Courses will be listed here -->
-            </div>
-            
-            <div class="action-buttons">
-                <button id="generate-routine" class="btn calculate-btn">Generate Routine</button>
-                <button id="print-routine" class="btn print-btn"><i class="fas fa-print"></i> Print Routine</button>
-                <button id="clear-routine" class="btn reset-btn"><i class="fas fa-redo"></i> Clear All</button>
-            </div>
-        </div>
-        
-        <div class="result-section">
-            <h3>Weekly Class Routine</h3>
-            <div id="routine-display">
-                <div class="placeholder">
-                    <i class="fas fa-calendar"></i>
-                    <p>Your generated routine will appear here</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-        </section>
-    </main>
-
-    <footer>
-        <div class="container">
-            <p>&copy; 2023 East West University Tools Hub | Developed for EWU Students</p>
-            <div class="footer-links">
-                <a href="#"><i class="fab fa-facebook"></i></a>
-                <a href="#"><i class="fas fa-envelope"></i></a>
-                <a href="https://www.ewubd.edu" target="_blank"><i class="fas fa-globe"></i></a>
-            </div>
-        </div>
-    </footer>
 
     <script src="script.js"></script>
 </body>
+</html>

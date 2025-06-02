@@ -1,206 +1,263 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // CGPA Calculator Functionality (unchanged)
-// CGPA Calculator Functionality (updated for EWU's 4.5 scale)
-const cgpaCalculator = {
-    init: function() {
-        this.cacheElements();
-        this.bindEvents();
-    },
+    // Show greeting page initially
+    const greetingPage = document.getElementById('greeting-page');
+    const mainContent = document.getElementById('main-content');
+    const toolButtons = document.querySelectorAll('.tool-btn');
+    const backButton = document.getElementById('back-to-home');
     
-    cacheElements: function() {
-        this.currentCgpaInput = document.getElementById('current-cgpa');
-        this.completedCreditsInput = document.getElementById('completed-credits');
-        this.coursesContainer = document.getElementById('courses-container');
-        this.addCourseBtn = document.getElementById('add-course');
-        this.calculateBtn = document.getElementById('calculate-cgpa');
-        this.resetBtn = document.getElementById('reset-cgpa');
-        this.printBtn = document.getElementById('print-cgpa');
-        this.semesterGpaDisplay = document.getElementById('semester-gpa');
-        this.newCgpaDisplay = document.getElementById('new-cgpa');
-    },
+    // Navigation between greeting page and tools
+    toolButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const target = this.getAttribute('data-target');
+            greetingPage.style.display = 'none';
+            mainContent.style.display = 'block';
+            
+            // Scroll to the selected tool
+            setTimeout(() => {
+                const targetElement = document.getElementById(target);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 100,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 50);
+        });
+    });
     
-    bindEvents: function() {
-        this.addCourseBtn.addEventListener('click', this.addCourse.bind(this));
-        this.calculateBtn.addEventListener('click', this.calculateCgpa.bind(this));
-        this.resetBtn.addEventListener('click', this.resetCalculator.bind(this));
-        this.printBtn.addEventListener('click', this.printResults.bind(this));
-        
-        // Add initial course
-        this.addCourse();
-    },
+    backButton.addEventListener('click', function() {
+        greetingPage.style.display = 'flex';
+        mainContent.style.display = 'none';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
     
-    addCourse: function() {
-        const courseRow = document.createElement('div');
-        courseRow.className = 'course-row';
-        
-        const gradeSelect = document.createElement('select');
-        gradeSelect.className = 'course-grade';
-        gradeSelect.innerHTML = `
-            <option value="">Select Grade</option>
-            <option value="4.0">A+ (4.0)</option>
-            <option value="3.75">A (3.75)</option>
-            <option value="3.5">A- (3.5)</option>
-            <option value="3.25">B+ (3.25)</option>
-            <option value="3.0">B (3.0)</option>
-            <option value="2.75">B- (2.75)</option>
-            <option value="2.5">C+ (2.5)</option>
-            <option value="2.25">C (2.25)</option>
-            <option value="2.0">D (2.0)</option>
-            <option value="0.0">F (0.0)</option>
-        `;
-        
-        const creditInput = document.createElement('input');
-        creditInput.type = 'number';
-        creditInput.className = 'course-credit';
-        creditInput.min = '0.5';
-        creditInput.max = '4.5';
-        creditInput.step = '0.5';
-        creditInput.placeholder = 'Credits';
-        creditInput.value = '3';
-        
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-course';
-        removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
-        removeBtn.addEventListener('click', function() {
-            if (document.querySelectorAll('.course-row').length > 1) {
-                courseRow.remove();
-            } else {
-                alert('You need at least one course');
+    // Instructions functionality
+    const instructionButtons = document.querySelectorAll('.instruction-btn');
+    const instructionModals = document.querySelectorAll('.instruction-modal');
+    const closeButtons = document.querySelectorAll('.close-instruction');
+    
+    instructionButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const target = this.getAttribute('data-target');
+            document.getElementById(target).style.display = 'block';
+        });
+    });
+    
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            this.closest('.instruction-modal').style.display = 'none';
+        });
+    });
+    
+    window.addEventListener('click', function(event) {
+        instructionModals.forEach(modal => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
             }
         });
-        
-        courseRow.appendChild(gradeSelect);
-        courseRow.appendChild(creditInput);
-        courseRow.appendChild(removeBtn);
-        
-        this.coursesContainer.appendChild(courseRow);
-    },
+    });
     
-    calculateCgpa: function() {
-        const currentCgpa = parseFloat(this.currentCgpaInput.value) || 0;
-        const completedCredits = parseFloat(this.completedCreditsInput.value) || 0;
+    // CGPA Calculator Functionality (updated for EWU's 4.5 scale)
+    const cgpaCalculator = {
+        init: function() {
+            this.cacheElements();
+            this.bindEvents();
+        },
         
-        // Validate current CGPA (0 to 4.5)
-        if (currentCgpa < 0 || currentCgpa > 4.5) {
-            alert('Current CGPA must be between 0 and 4.5');
-            return;
-        }
+        cacheElements: function() {
+            this.currentCgpaInput = document.getElementById('current-cgpa');
+            this.completedCreditsInput = document.getElementById('completed-credits');
+            this.coursesContainer = document.getElementById('courses-container');
+            this.addCourseBtn = document.getElementById('add-course');
+            this.calculateBtn = document.getElementById('calculate-cgpa');
+            this.resetBtn = document.getElementById('reset-cgpa');
+            this.printBtn = document.getElementById('print-cgpa');
+            this.semesterGpaDisplay = document.getElementById('semester-gpa');
+            this.newCgpaDisplay = document.getElementById('new-cgpa');
+        },
         
-        let totalGradePoints = 0;
-        let totalCredits = 0;
-        let allValid = true;
-        
-        document.querySelectorAll('.course-row').forEach(row => {
-            const grade = parseFloat(row.querySelector('.course-grade').value);
-            const credits = parseFloat(row.querySelector('.course-credit').value);
+        bindEvents: function() {
+            this.addCourseBtn.addEventListener('click', this.addCourse.bind(this));
+            this.calculateBtn.addEventListener('click', this.calculateCgpa.bind(this));
+            this.resetBtn.addEventListener('click', this.resetCalculator.bind(this));
+            this.printBtn.addEventListener('click', this.printResults.bind(this));
             
-            if (isNaN(grade) || isNaN(credits)) {
-                allValid = false;
+            // Add initial course
+            this.addCourse();
+        },
+        
+        addCourse: function() {
+            const courseRow = document.createElement('div');
+            courseRow.className = 'course-row';
+            
+            const gradeSelect = document.createElement('select');
+            gradeSelect.className = 'course-grade';
+            gradeSelect.innerHTML = `
+                <option value="">Select Grade</option>
+                <option value="4.0">A+ (4.0)</option>
+                <option value="3.75">A (3.75)</option>
+                <option value="3.5">A- (3.5)</option>
+                <option value="3.25">B+ (3.25)</option>
+                <option value="3.0">B (3.0)</option>
+                <option value="2.75">B- (2.75)</option>
+                <option value="2.5">C+ (2.5)</option>
+                <option value="2.25">C (2.25)</option>
+                <option value="2.0">D (2.0)</option>
+                <option value="0.0">F (0.0)</option>
+            `;
+            
+            const creditInput = document.createElement('input');
+            creditInput.type = 'number';
+            creditInput.className = 'course-credit';
+            creditInput.min = '0.5';
+            creditInput.max = '4.5';
+            creditInput.step = '0.5';
+            creditInput.placeholder = 'Credits';
+            creditInput.value = '3';
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-course';
+            removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            removeBtn.addEventListener('click', function() {
+                if (document.querySelectorAll('.course-row').length > 1) {
+                    courseRow.remove();
+                } else {
+                    alert('You need at least one course');
+                }
+            });
+            
+            courseRow.appendChild(gradeSelect);
+            courseRow.appendChild(creditInput);
+            courseRow.appendChild(removeBtn);
+            
+            this.coursesContainer.appendChild(courseRow);
+        },
+        
+        calculateCgpa: function() {
+            const currentCgpa = parseFloat(this.currentCgpaInput.value) || 0;
+            const completedCredits = parseFloat(this.completedCreditsInput.value) || 0;
+            
+            // Validate current CGPA (0 to 4.5)
+            if (currentCgpa < 0 || currentCgpa > 4.5) {
+                alert('Current CGPA must be between 0 and 4.5');
                 return;
             }
             
-            // Validate credits (0.5 to 4.5)
-            if (credits < 0.5 || credits > 4.5) {
-                alert('Credits must be between 0.5 and 4.5');
-                allValid = false;
+            let totalGradePoints = 0;
+            let totalCredits = 0;
+            let allValid = true;
+            
+            document.querySelectorAll('.course-row').forEach(row => {
+                const grade = parseFloat(row.querySelector('.course-grade').value);
+                const credits = parseFloat(row.querySelector('.course-credit').value);
+                
+                if (isNaN(grade) || isNaN(credits)) {
+                    allValid = false;
+                    return;
+                }
+                
+                // Validate credits (0.5 to 4.5)
+                if (credits < 0.5 || credits > 4.5) {
+                    alert('Credits must be between 0.5 and 4.5');
+                    allValid = false;
+                    return;
+                }
+                
+                totalGradePoints += grade * credits;
+                totalCredits += credits;
+            });
+            
+            if (!allValid) {
+                alert('Please fill all grade and credit fields with valid values');
                 return;
             }
             
-            totalGradePoints += grade * credits;
-            totalCredits += credits;
-        });
+            if (totalCredits === 0) {
+                alert('Please add at least one course');
+                return;
+            }
+            
+            const semesterGpa = totalGradePoints / totalCredits;
+            let newCgpa = semesterGpa;
+            
+            if (completedCredits > 0) {
+                const totalGradePointsBefore = currentCgpa * completedCredits;
+                newCgpa = (totalGradePointsBefore + totalGradePoints) / (completedCredits + totalCredits);
+            }
+            
+            // Cap the CGPA at 4.5
+            newCgpa = Math.min(newCgpa, 4.5);
+            
+            this.semesterGpaDisplay.textContent = semesterGpa.toFixed(2);
+            this.newCgpaDisplay.textContent = newCgpa.toFixed(2);
+        },
         
-        if (!allValid) {
-            alert('Please fill all grade and credit fields with valid values');
-            return;
+        resetCalculator: function() {
+            this.currentCgpaInput.value = '';
+            this.completedCreditsInput.value = '';
+            this.semesterGpaDisplay.textContent = '-';
+            this.newCgpaDisplay.textContent = '-';
+            
+            // Remove all but one course row
+            const rows = document.querySelectorAll('.course-row');
+            for (let i = 1; i < rows.length; i++) {
+                rows[i].remove();
+            }
+            
+            // Reset the first row
+            const firstRow = rows[0];
+            firstRow.querySelector('.course-grade').value = '';
+            firstRow.querySelector('.course-credit').value = '3';
+        },
+        
+        printResults: function() {
+            const printContent = `
+                <h2>EWU CGPA Calculation Result</h2>
+                <p><strong>Current CGPA:</strong> ${this.currentCgpaInput.value || 'N/A'}</p>
+                <p><strong>Completed Credits:</strong> ${this.completedCreditsInput.value || '0'}</p>
+                <h3>Current Semester Courses</h3>
+                <ul>
+                    ${Array.from(document.querySelectorAll('.course-row')).map(row => {
+                        const grade = row.querySelector('.course-grade').value;
+                        const credits = row.querySelector('.course-credit').value;
+                        return `<li>Grade: ${grade || 'Not selected'}, Credits: ${credits}</li>`;
+                    }).join('')}
+                </ul>
+                <h3>Results</h3>
+                <p><strong>Semester GPA:</strong> ${this.semesterGpaDisplay.textContent}</p>
+                <p><strong>New CGPA:</strong> ${this.newCgpaDisplay.textContent}</p>
+                <p>Generated on ${new Date().toLocaleString()}</p>
+                <p><small>Note: EWU follows a 4.5 grading scale (A+ = 4.0, A = 3.75, A- = 3.5, B+ = 3.25, B = 3.0, B- = 2.75, C+ = 2.5, C = 2.25, D = 2.0, F = 0.0)</small></p>
+            `;
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>EWU CGPA Result</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; }
+                            h2, h3 { color: #0056b3; }
+                            ul { margin-left: 20px; }
+                            small { font-size: 0.8em; color: #666; }
+                        </style>
+                    </head>
+                    <body>
+                        ${printContent}
+                        <script>
+                            window.onload = function() {
+                                window.print();
+                                setTimeout(function() { window.close(); }, 1000);
+                            };
+                        </script>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
         }
-        
-        if (totalCredits === 0) {
-            alert('Please add at least one course');
-            return;
-        }
-        
-        const semesterGpa = totalGradePoints / totalCredits;
-        let newCgpa = semesterGpa;
-        
-        if (completedCredits > 0) {
-            const totalGradePointsBefore = currentCgpa * completedCredits;
-            newCgpa = (totalGradePointsBefore + totalGradePoints) / (completedCredits + totalCredits);
-        }
-        
-        // Cap the CGPA at 4.5
-        newCgpa = Math.min(newCgpa, 4.5);
-        
-        this.semesterGpaDisplay.textContent = semesterGpa.toFixed(2);
-        this.newCgpaDisplay.textContent = newCgpa.toFixed(2);
-    },
-    
-    resetCalculator: function() {
-        this.currentCgpaInput.value = '';
-        this.completedCreditsInput.value = '';
-        this.semesterGpaDisplay.textContent = '-';
-        this.newCgpaDisplay.textContent = '-';
-        
-        // Remove all but one course row
-        const rows = document.querySelectorAll('.course-row');
-        for (let i = 1; i < rows.length; i++) {
-            rows[i].remove();
-        }
-        
-        // Reset the first row
-        const firstRow = rows[0];
-        firstRow.querySelector('.course-grade').value = '';
-        firstRow.querySelector('.course-credit').value = '3';
-    },
-    
-    printResults: function() {
-        const printContent = `
-            <h2>EWU CGPA Calculation Result</h2>
-            <p><strong>Current CGPA:</strong> ${this.currentCgpaInput.value || 'N/A'}</p>
-            <p><strong>Completed Credits:</strong> ${this.completedCreditsInput.value || '0'}</p>
-            <h3>Current Semester Courses</h3>
-            <ul>
-                ${Array.from(document.querySelectorAll('.course-row')).map(row => {
-                    const grade = row.querySelector('.course-grade').value;
-                    const credits = row.querySelector('.course-credit').value;
-                    return `<li>Grade: ${grade || 'Not selected'}, Credits: ${credits}</li>`;
-                }).join('')}
-            </ul>
-            <h3>Results</h3>
-            <p><strong>Semester GPA:</strong> ${this.semesterGpaDisplay.textContent}</p>
-            <p><strong>New CGPA:</strong> ${this.newCgpaDisplay.textContent}</p>
-            <p>Generated on ${new Date().toLocaleString()}</p>
-            <p><small>Note: EWU follows a 4.5 grading scale (A+ = 4.0, A = 3.75, A- = 3.5, B+ = 3.25, B = 3.0, B- = 2.75, C+ = 2.5, C = 2.25, D = 2.0, F = 0.0)</small></p>
-        `;
-        
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>EWU CGPA Result</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; }
-                        h2, h3 { color: #0056b3; }
-                        ul { margin-left: 20px; }
-                        small { font-size: 0.8em; color: #666; }
-                    </style>
-                </head>
-                <body>
-                    ${printContent}
-                    <script>
-                        window.onload = function() {
-                            window.print();
-                            setTimeout(function() { window.close(); }, 1000);
-                        };
-                    </script>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-    }
-};
+    };
 
-    // Course Flow Charts Functionality (unchanged)
+    // Course Flow Charts Functionality
     const flowCharts = {
         init: function() {
             this.cacheElements();
@@ -370,321 +427,321 @@ const cgpaCalculator = {
         }
     };
 
-    // Tuition Fee Calculator Functionality (unchanged)
-const feeCalculator = {
-    init: function() {
-        this.cacheElements();
-        this.bindEvents();
-        this.loadFeeStructure();
-    },
-    
-    cacheElements: function() {
-        this.departmentSelect = document.getElementById('fee-department');
-        this.semesterTypeSelect = document.getElementById('semester-type');
-        this.coursesContainer = document.getElementById('fee-courses-container');
-        this.addCourseBtn = document.getElementById('add-course-fee');
-        this.registrationFeeInput = document.getElementById('registration-fee');
-        this.libraryFeeInput = document.getElementById('library-fee');
-        this.activityFeeInput = document.getElementById('activity-fee');
-        this.scholarshipInput = document.getElementById('scholarship');
-        this.calculateBtn = document.getElementById('calculate-fee');
-        this.resetBtn = document.getElementById('reset-fee');
-        this.printBtn = document.getElementById('print-fee');
+    // Tuition Fee Calculator Functionality
+    const feeCalculator = {
+        init: function() {
+            this.cacheElements();
+            this.bindEvents();
+            this.loadFeeStructure();
+        },
         
-        // Result displays
-        this.totalCreditsDisplay = document.getElementById('total-credits');
-        this.tuitionFeeDisplay = document.getElementById('tuition-fee');
-        this.otherFeesDisplay = document.getElementById('other-fees');
-        this.scholarshipDisplay = document.getElementById('scholarship-amount');
-        this.totalFeeDisplay = document.getElementById('total-fee');
-        this.courseFeeDetails = document.getElementById('course-fee-details');
-    },
-    
-    bindEvents: function() {
-        this.addCourseBtn.addEventListener('click', this.addCourse.bind(this));
-        this.calculateBtn.addEventListener('click', this.calculateFees.bind(this));
-        this.resetBtn.addEventListener('click', this.resetCalculator.bind(this));
-        this.printBtn.addEventListener('click', this.printFeeDetails.bind(this));
-        
-        // Auto-fill per credit fee when department changes
-        this.departmentSelect.addEventListener('change', this.updatePerCreditFees.bind(this));
-        this.semesterTypeSelect.addEventListener('change', this.updatePerCreditFees.bind(this));
-    },
-    
-    loadFeeStructure: function() {
-        this.feeStructure = {
-            cse: {
-                regular: { perCredit: 4500, otherFees: 12000 },
-                summer: { perCredit: 3500, otherFees: 8000 }
-            },
-            eee: {
-                regular: { perCredit: 4000, otherFees: 11000 },
-                summer: { perCredit: 3000, otherFees: 7000 }
-            },
-            bba: {
-                regular: { perCredit: 3500, otherFees: 9000 },
-                summer: { perCredit: 2500, otherFees: 6000 }
-            },
-            eco: {
-                regular: { perCredit: 3000, otherFees: 8000 },
-                summer: { perCredit: 2000, otherFees: 5000 }
-            },
-            eng: {
-                regular: { perCredit: 3000, otherFees: 8000 },
-                summer: { perCredit: 2000, otherFees: 5000 }
-            }
-        };
-    },
-    
-    addCourse: function() {
-        const courseRow = document.createElement('div');
-        courseRow.className = 'course-fee-row';
-        
-        courseRow.innerHTML = `
-            <div class="form-group">
-                <label>Course Code:</label>
-                <input type="text" class="course-code" placeholder="e.g., CSE101">
-            </div>
-            <div class="form-group">
-                <label>Credits:</label>
-                <input type="number" class="course-credit" min="1" max="4" value="3">
-            </div>
-            <div class="form-group">
-                <label>Per Credit Fee:</label>
-                <input type="number" class="course-per-credit" min="0" placeholder="Auto from dept">
-            </div>
-            <button class="remove-course-fee"><i class="fas fa-trash"></i></button>
-        `;
-        
-        // Set default per credit fee if department is selected
-        const department = this.departmentSelect.value;
-        const semesterType = this.semesterTypeSelect.value;
-        if (department && semesterType) {
-            const perCredit = this.feeStructure[department][semesterType].perCredit;
-            courseRow.querySelector('.course-per-credit').value = perCredit;
-        }
-        
-        courseRow.querySelector('.remove-course-fee').addEventListener('click', function() {
-            if (document.querySelectorAll('.course-fee-row').length > 1) {
-                courseRow.remove();
-            } else {
-                alert('You need at least one course');
-            }
-        });
-        
-        this.coursesContainer.appendChild(courseRow);
-    },
-    
-    updatePerCreditFees: function() {
-        const department = this.departmentSelect.value;
-        const semesterType = this.semesterTypeSelect.value;
-        
-        if (!department || !semesterType) return;
-        
-        const perCredit = this.feeStructure[department][semesterType].perCredit;
-        
-        // Update all empty per credit fields
-        document.querySelectorAll('.course-per-credit').forEach(input => {
-            if (!input.value || input.value === "0") {
-                input.value = perCredit;
-            }
-        });
-    },
-    
-    calculateFees: function() {
-        const department = this.departmentSelect.value;
-        const semesterType = this.semesterTypeSelect.value;
-        const scholarship = parseInt(this.scholarshipInput.value) || 0;
-        
-        if (!department) {
-            alert('Please select your department');
-            return;
-        }
-        
-        // Calculate total credits and tuition fee
-        let totalCredits = 0;
-        let tuitionFee = 0;
-        const courses = [];
-        
-        document.querySelectorAll('.course-fee-row').forEach(row => {
-            const code = row.querySelector('.course-code').value.trim();
-            const credits = parseFloat(row.querySelector('.course-credit').value) || 0;
-            const perCredit = parseFloat(row.querySelector('.course-per-credit').value) || 0;
+        cacheElements: function() {
+            this.departmentSelect = document.getElementById('fee-department');
+            this.semesterTypeSelect = document.getElementById('semester-type');
+            this.coursesContainer = document.getElementById('fee-courses-container');
+            this.addCourseBtn = document.getElementById('add-course-fee');
+            this.registrationFeeInput = document.getElementById('registration-fee');
+            this.libraryFeeInput = document.getElementById('library-fee');
+            this.activityFeeInput = document.getElementById('activity-fee');
+            this.scholarshipInput = document.getElementById('scholarship');
+            this.calculateBtn = document.getElementById('calculate-fee');
+            this.resetBtn = document.getElementById('reset-fee');
+            this.printBtn = document.getElementById('print-fee');
             
-            if (code && credits > 0 && perCredit > 0) {
-                totalCredits += credits;
-                const courseFee = credits * perCredit;
-                tuitionFee += courseFee;
-                
-                courses.push({
-                    code,
-                    credits,
-                    perCredit,
-                    courseFee
-                });
-            }
-        });
+            // Result displays
+            this.totalCreditsDisplay = document.getElementById('total-credits');
+            this.tuitionFeeDisplay = document.getElementById('tuition-fee');
+            this.otherFeesDisplay = document.getElementById('other-fees');
+            this.scholarshipDisplay = document.getElementById('scholarship-amount');
+            this.totalFeeDisplay = document.getElementById('total-fee');
+            this.courseFeeDetails = document.getElementById('course-fee-details');
+        },
         
-        if (totalCredits === 0) {
-            alert('Please add at least one valid course');
-            return;
-        }
-        
-        if (scholarship < 0 || scholarship > 100) {
-            alert('Scholarship must be between 0 and 100');
-            return;
-        }
-        
-        // Other fees (not affected by scholarship)
-        const registrationFee = parseFloat(this.registrationFeeInput.value) || 0;
-        const libraryFee = parseFloat(this.libraryFeeInput.value) || 0;
-        const activityFee = parseFloat(this.activityFeeInput.value) || 0;
-        const otherFees = registrationFee + libraryFee + activityFee;
-        
-        // Scholarship only applies to tuition fee
-        const scholarshipAmount = (tuitionFee * scholarship) / 100;
-        const totalFee = (tuitionFee + otherFees) - scholarshipAmount;
-        
-        // Update displays
-        this.totalCreditsDisplay.textContent = totalCredits;
-        this.tuitionFeeDisplay.textContent = `${tuitionFee.toLocaleString()} BDT`;
-        this.otherFeesDisplay.textContent = `${otherFees.toLocaleString()} BDT`;
-        this.scholarshipDisplay.textContent = `${scholarshipAmount.toLocaleString()} BDT (${scholarship}%)`;
-        this.totalFeeDisplay.textContent = `${totalFee.toLocaleString()} BDT`;
-        
-        // Show course details
-        this.showCourseDetails(courses);
-    },
-    
-    showCourseDetails: function(courses) {
-        let html = '';
-        
-        if (courses.length === 0) {
-            html = '<p>No courses added</p>';
-        } else {
-            html = '<table class="fee-course-table">';
-            html += '<tr><th>Course</th><th>Credits</th><th>Per Credit</th><th>Fee</th></tr>';
+        bindEvents: function() {
+            this.addCourseBtn.addEventListener('click', this.addCourse.bind(this));
+            this.calculateBtn.addEventListener('click', this.calculateFees.bind(this));
+            this.resetBtn.addEventListener('click', this.resetCalculator.bind(this));
+            this.printBtn.addEventListener('click', this.printFeeDetails.bind(this));
             
-            courses.forEach(course => {
-                html += `
-                    <tr>
-                        <td>${course.code}</td>
-                        <td>${course.credits}</td>
-                        <td>${course.perCredit.toLocaleString()} BDT</td>
-                        <td>${course.courseFee.toLocaleString()} BDT</td>
-                    </tr>
-                `;
+            // Auto-fill per credit fee when department changes
+            this.departmentSelect.addEventListener('change', this.updatePerCreditFees.bind(this));
+            this.semesterTypeSelect.addEventListener('change', this.updatePerCreditFees.bind(this));
+        },
+        
+        loadFeeStructure: function() {
+            this.feeStructure = {
+                cse: {
+                    regular: { perCredit: 4500, otherFees: 12000 },
+                    summer: { perCredit: 3500, otherFees: 8000 }
+                },
+                eee: {
+                    regular: { perCredit: 4000, otherFees: 11000 },
+                    summer: { perCredit: 3000, otherFees: 7000 }
+                },
+                bba: {
+                    regular: { perCredit: 3500, otherFees: 9000 },
+                    summer: { perCredit: 2500, otherFees: 6000 }
+                },
+                eco: {
+                    regular: { perCredit: 3000, otherFees: 8000 },
+                    summer: { perCredit: 2000, otherFees: 5000 }
+                },
+                eng: {
+                    regular: { perCredit: 3000, otherFees: 8000 },
+                    summer: { perCredit: 2000, otherFees: 5000 }
+                }
+            };
+        },
+        
+        addCourse: function() {
+            const courseRow = document.createElement('div');
+            courseRow.className = 'course-fee-row';
+            
+            courseRow.innerHTML = `
+                <div class="form-group">
+                    <label>Course Code:</label>
+                    <input type="text" class="course-code" placeholder="e.g., CSE101">
+                </div>
+                <div class="form-group">
+                    <label>Credits:</label>
+                    <input type="number" class="course-credit" min="1" max="4" value="3">
+                </div>
+                <div class="form-group">
+                    <label>Per Credit Fee:</label>
+                    <input type="number" class="course-per-credit" min="0" placeholder="Auto from dept">
+                </div>
+                <button class="remove-course-fee"><i class="fas fa-trash"></i></button>
+            `;
+            
+            // Set default per credit fee if department is selected
+            const department = this.departmentSelect.value;
+            const semesterType = this.semesterTypeSelect.value;
+            if (department && semesterType) {
+                const perCredit = this.feeStructure[department][semesterType].perCredit;
+                courseRow.querySelector('.course-per-credit').value = perCredit;
+            }
+            
+            courseRow.querySelector('.remove-course-fee').addEventListener('click', function() {
+                if (document.querySelectorAll('.course-fee-row').length > 1) {
+                    courseRow.remove();
+                } else {
+                    alert('You need at least one course');
+                }
             });
             
-            html += '</table>';
+            this.coursesContainer.appendChild(courseRow);
+        },
+        
+        updatePerCreditFees: function() {
+            const department = this.departmentSelect.value;
+            const semesterType = this.semesterTypeSelect.value;
+            
+            if (!department || !semesterType) return;
+            
+            const perCredit = this.feeStructure[department][semesterType].perCredit;
+            
+            // Update all empty per credit fields
+            document.querySelectorAll('.course-per-credit').forEach(input => {
+                if (!input.value || input.value === "0") {
+                    input.value = perCredit;
+                }
+            });
+        },
+        
+        calculateFees: function() {
+            const department = this.departmentSelect.value;
+            const semesterType = this.semesterTypeSelect.value;
+            const scholarship = parseInt(this.scholarshipInput.value) || 0;
+            
+            if (!department) {
+                alert('Please select your department');
+                return;
+            }
+            
+            // Calculate total credits and tuition fee
+            let totalCredits = 0;
+            let tuitionFee = 0;
+            const courses = [];
+            
+            document.querySelectorAll('.course-fee-row').forEach(row => {
+                const code = row.querySelector('.course-code').value.trim();
+                const credits = parseFloat(row.querySelector('.course-credit').value) || 0;
+                const perCredit = parseFloat(row.querySelector('.course-per-credit').value) || 0;
+                
+                if (code && credits > 0 && perCredit > 0) {
+                    totalCredits += credits;
+                    const courseFee = credits * perCredit;
+                    tuitionFee += courseFee;
+                    
+                    courses.push({
+                        code,
+                        credits,
+                        perCredit,
+                        courseFee
+                    });
+                }
+            });
+            
+            if (totalCredits === 0) {
+                alert('Please add at least one valid course');
+                return;
+            }
+            
+            if (scholarship < 0 || scholarship > 100) {
+                alert('Scholarship must be between 0 and 100');
+                return;
+            }
+            
+            // Other fees (not affected by scholarship)
+            const registrationFee = parseFloat(this.registrationFeeInput.value) || 0;
+            const libraryFee = parseFloat(this.libraryFeeInput.value) || 0;
+            const activityFee = parseFloat(this.activityFeeInput.value) || 0;
+            const otherFees = registrationFee + libraryFee + activityFee;
+            
+            // Scholarship only applies to tuition fee
+            const scholarshipAmount = (tuitionFee * scholarship) / 100;
+            const totalFee = (tuitionFee + otherFees) - scholarshipAmount;
+            
+            // Update displays
+            this.totalCreditsDisplay.textContent = totalCredits;
+            this.tuitionFeeDisplay.textContent = `${tuitionFee.toLocaleString()} BDT`;
+            this.otherFeesDisplay.textContent = `${otherFees.toLocaleString()} BDT`;
+            this.scholarshipDisplay.textContent = `${scholarshipAmount.toLocaleString()} BDT (${scholarship}%)`;
+            this.totalFeeDisplay.textContent = `${totalFee.toLocaleString()} BDT`;
+            
+            // Show course details
+            this.showCourseDetails(courses);
+        },
+        
+        showCourseDetails: function(courses) {
+            let html = '';
+            
+            if (courses.length === 0) {
+                html = '<p>No courses added</p>';
+            } else {
+                html = '<table class="fee-course-table">';
+                html += '<tr><th>Course</th><th>Credits</th><th>Per Credit</th><th>Fee</th></tr>';
+                
+                courses.forEach(course => {
+                    html += `
+                        <tr>
+                            <td>${course.code}</td>
+                            <td>${course.credits}</td>
+                            <td>${course.perCredit.toLocaleString()} BDT</td>
+                            <td>${course.courseFee.toLocaleString()} BDT</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</table>';
+            }
+            
+            this.courseFeeDetails.innerHTML = html;
+        },
+        
+        resetCalculator: function() {
+            this.departmentSelect.value = '';
+            this.semesterTypeSelect.value = 'regular';
+            this.registrationFeeInput.value = '5000';
+            this.libraryFeeInput.value = '2000';
+            this.activityFeeInput.value = '1500';
+            this.scholarshipInput.value = '0';
+            
+            // Remove all but one course row
+            const rows = document.querySelectorAll('.course-fee-row');
+            for (let i = 1; i < rows.length; i++) {
+                rows[i].remove();
+            }
+            
+            // Reset the first row
+            const firstRow = rows[0];
+            firstRow.querySelector('.course-code').value = '';
+            firstRow.querySelector('.course-credit').value = '3';
+            firstRow.querySelector('.course-per-credit').value = '';
+            
+            // Reset results
+            this.totalCreditsDisplay.textContent = '-';
+            this.tuitionFeeDisplay.textContent = '-';
+            this.otherFeesDisplay.textContent = '-';
+            this.scholarshipDisplay.textContent = '-';
+            this.totalFeeDisplay.textContent = '-';
+            this.courseFeeDetails.innerHTML = '';
+        },
+        
+        printFeeDetails: function() {
+            const department = this.departmentSelect.options[this.departmentSelect.selectedIndex].text;
+            const semesterType = this.semesterTypeSelect.options[this.semesterTypeSelect.selectedIndex].text;
+            
+            const printContent = `
+                <h2>EWU Fee Calculation</h2>
+                <div class="print-header">
+                    <p><strong>Department:</strong> ${department}</p>
+                    <p><strong>Semester Type:</strong> ${semesterType}</p>
+                </div>
+                
+                <h3>Course Details</h3>
+                ${this.courseFeeDetails.innerHTML}
+                
+                <h3>Fee Summary</h3>
+                <table class="print-fee-summary">
+                    <tr>
+                        <td>Total Credits:</td>
+                        <td>${this.totalCreditsDisplay.textContent}</td>
+                    </tr>
+                    <tr>
+                        <td>Tuition Fee:</td>
+                        <td>${this.tuitionFeeDisplay.textContent}</td>
+                    </tr>
+                    <tr>
+                        <td>Other Fees:</td>
+                        <td>${this.otherFeesDisplay.textContent}</td>
+                    </tr>
+                    <tr>
+                        <td>Scholarship:</td>
+                        <td>${this.scholarshipDisplay.textContent}</td>
+                    </tr>
+                    <tr class="total">
+                        <td>Total Payable:</td>
+                        <td>${this.totalFeeDisplay.textContent}</td>
+                    </tr>
+                </table>
+                
+                <div class="print-footer">
+                    <p>Generated on ${new Date().toLocaleDateString()}</p>
+                </div>
+            `;
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>EWU Fee Calculation</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; }
+                            h2, h3 { color: #0056b3; }
+                            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                            th { background-color: #f2f2f2; }
+                            .print-header { margin-bottom: 20px; }
+                            .print-fee-summary { width: 60%; }
+                            .print-fee-summary tr.total { font-weight: bold; }
+                            .print-footer { margin-top: 30px; text-align: center; font-size: 0.9em; color: #666; }
+                        </style>
+                    </head>
+                    <body>
+                        ${printContent}
+                        <script>
+                            window.onload = function() {
+                                window.print();
+                                setTimeout(function() { window.close(); }, 1000);
+                            };
+                        </script>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
         }
-        
-        this.courseFeeDetails.innerHTML = html;
-    },
-    
-    resetCalculator: function() {
-        this.departmentSelect.value = '';
-        this.semesterTypeSelect.value = 'regular';
-        this.registrationFeeInput.value = '5000';
-        this.libraryFeeInput.value = '2000';
-        this.activityFeeInput.value = '1500';
-        this.scholarshipInput.value = '0';
-        
-        // Remove all but one course row
-        const rows = document.querySelectorAll('.course-fee-row');
-        for (let i = 1; i < rows.length; i++) {
-            rows[i].remove();
-        }
-        
-        // Reset the first row
-        const firstRow = rows[0];
-        firstRow.querySelector('.course-code').value = '';
-        firstRow.querySelector('.course-credit').value = '3';
-        firstRow.querySelector('.course-per-credit').value = '';
-        
-        // Reset results
-        this.totalCreditsDisplay.textContent = '-';
-        this.tuitionFeeDisplay.textContent = '-';
-        this.otherFeesDisplay.textContent = '-';
-        this.scholarshipDisplay.textContent = '-';
-        this.totalFeeDisplay.textContent = '-';
-        this.courseFeeDetails.innerHTML = '';
-    },
-    
-    printFeeDetails: function() {
-        const department = this.departmentSelect.options[this.departmentSelect.selectedIndex].text;
-        const semesterType = this.semesterTypeSelect.options[this.semesterTypeSelect.selectedIndex].text;
-        
-        const printContent = `
-            <h2>EWU Fee Calculation</h2>
-            <div class="print-header">
-                <p><strong>Department:</strong> ${department}</p>
-                <p><strong>Semester Type:</strong> ${semesterType}</p>
-            </div>
-            
-            <h3>Course Details</h3>
-            ${this.courseFeeDetails.innerHTML}
-            
-            <h3>Fee Summary</h3>
-            <table class="print-fee-summary">
-                <tr>
-                    <td>Total Credits:</td>
-                    <td>${this.totalCreditsDisplay.textContent}</td>
-                </tr>
-                <tr>
-                    <td>Tuition Fee:</td>
-                    <td>${this.tuitionFeeDisplay.textContent}</td>
-                </tr>
-                <tr>
-                    <td>Other Fees:</td>
-                    <td>${this.otherFeesDisplay.textContent}</td>
-                </tr>
-                <tr>
-                    <td>Scholarship:</td>
-                    <td>${this.scholarshipDisplay.textContent}</td>
-                </tr>
-                <tr class="total">
-                    <td>Total Payable:</td>
-                    <td>${this.totalFeeDisplay.textContent}</td>
-                </tr>
-            </table>
-            
-            <div class="print-footer">
-                <p>Generated on ${new Date().toLocaleDateString()}</p>
-            </div>
-        `;
-        
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>EWU Fee Calculation</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; padding: 20px; }
-                        h2, h3 { color: #0056b3; }
-                        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                        th { background-color: #f2f2f2; }
-                        .print-header { margin-bottom: 20px; }
-                        .print-fee-summary { width: 60%; }
-                        .print-fee-summary tr.total { font-weight: bold; }
-                        .print-footer { margin-top: 30px; text-align: center; font-size: 0.9em; color: #666; }
-                    </style>
-                </head>
-                <body>
-                    ${printContent}
-                    <script>
-                        window.onload = function() {
-                            window.print();
-                            setTimeout(function() { window.close(); }, 1000);
-                        };
-                    </script>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-    }
-};
+    };
 
     // Routine Generator Functionality (updated)
     const routineGenerator = {
