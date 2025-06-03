@@ -1,6 +1,5 @@
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Theme Management
+    // Theme Management (keep existing theme code)
     const themeToggle = document.getElementById('theme-toggle');
     const themeToggleHeader = document.getElementById('theme-toggle-header');
     const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
@@ -1694,134 +1693,7 @@ const routineGenerator = {
         });
     },
 
-    exportToICal: function() {
-        if (this.courses.length === 0) {
-            showToast('No courses to export', 'error');
-            return;
-        }
-
-        let icalContent = [
-            'BEGIN:VCALENDAR',
-            'VERSION:2.0',
-            'PRODID:-//EWU Tools Hub//Class Routine//EN',
-            'CALSCALE:GREGORIAN',
-            'METHOD:PUBLISH'
-        ];
-
-        // Add events for each course session
-        this.courses.forEach(course => {
-            course.sessions.forEach((session, index) => {
-                const startDate = this.getNextDayOfWeek(session.day);
-                if (!startDate) return;
-
-                const [hours, minutes] = session.time.split(':').map(Number);
-                startDate.setHours(hours, minutes, 0);
-
-                const endDate = new Date(startDate);
-                endDate.setHours(startDate.getHours() + Math.floor(session.duration));
-                endDate.setMinutes(startDate.getMinutes() + Math.round((session.duration % 1) * 60));
-
-                const eventId = `${course.id}-${index}-${Date.now()}`;
-                const now = new Date();
-                const isLab = course.type === 'lab';
-                const location = course.room ? (isLab ? `Lab ${course.room}` : `Room ${course.room}`) : 'TBA';
-
-                icalContent.push(
-                    'BEGIN:VEVENT',
-                    `UID:${eventId}@ewutoolshub.com`,
-                    `DTSTAMP:${this.formatICalDate(now)}`,
-                    `DTSTART:${this.formatICalDate(startDate)}`,
-                    `DTEND:${this.formatICalDate(endDate)}`,
-                    `SUMMARY:${course.code} ${isLab ? '(Lab)' : ''} - ${course.title}`,
-                    `DESCRIPTION:${course.faculty}\\nSection: ${course.section}`,
-                    `LOCATION:${location}`,
-                    'RRULE:FREQ=WEEKLY;COUNT=16', // Assuming 16 weeks in a semester
-                    'BEGIN:VALARM',
-                    'TRIGGER:-PT15M',
-                    'ACTION:DISPLAY',
-                    `DESCRIPTION:Reminder: ${course.code} class`,
-                    'END:VALARM',
-                    'END:VEVENT'
-                );
-            });
-        });
-
-        icalContent.push('END:VCALENDAR');
-
-        // Create download link
-        const blob = new Blob([icalContent.join('\r\n')], { type: 'text/calendar' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `EWU_Routine_${new Date().toISOString().slice(0, 10)}.ics`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        showToast('iCal file downloaded', 'success');
-    },
-
-exportToPDF: function() {
-    if (this.courses.length === 0) {
-        showToast('No routine to export', 'error');
-        return;
-    }
-
-    showToast('Preparing PDF...', 'info');
-
-    const routineContainer = document.querySelector('.routine-table-container');
-    if (!routineContainer) return;
-
-    // Temporarily hide buttons and warnings for cleaner PDF
-    const exportButtons = document.querySelector('.export-buttons');
-    const conflictWarnings = document.getElementById('conflict-warnings');
-    const originalExportDisplay = exportButtons?.style.display;
-    const originalWarningsDisplay = conflictWarnings?.style.display;
-
-    if (exportButtons) exportButtons.style.display = 'none';
-    if (conflictWarnings) conflictWarnings.style.display = 'none';
-
-    // Calculate the scale based on table width
-    const tableWidth = routineContainer.scrollWidth;
-    const pageWidth = 297; // A4 width in mm (landscape)
-    const scale = (pageWidth * 2.83465) / tableWidth; // Convert mm to px (1mm = 2.83465px)
-
-    html2canvas(routineContainer, {
-        scale: scale, // Dynamic scale based on table width
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: routineContainer.scrollWidth,
-        windowHeight: routineContainer.scrollHeight,
-        backgroundColor: getComputedStyle(document.body).getPropertyValue('--card-bg')
-    }).then(canvas => {
-        // Restore original display
-        if (exportButtons) exportButtons.style.display = originalExportDisplay;
-        if (conflictWarnings) conflictWarnings.style.display = originalWarningsDisplay;
-
-        // Create PDF
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('l', 'mm', 'a4');
-        const imgWidth = pageWidth; // A4 width in mm (landscape)
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        // Add image to PDF
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-        pdf.save(`EWU_Routine_${new Date().toISOString().slice(0, 10)}.pdf`);
-        
-        showToast('PDF downloaded', 'success');
-    }).catch(err => {
-        console.error('Error generating PDF:', err);
-        showToast('Failed to generate PDF', 'error');
-        
-        // Restore original display in case of error
-        if (exportButtons) exportButtons.style.display = originalExportDisplay;
-        if (conflictWarnings) conflictWarnings.style.display = originalWarningsDisplay;
-    });
-},
+ 
 
     // Helper functions
     getNextDayOfWeek: function(dayName) {
@@ -1844,16 +1716,7 @@ exportToPDF: function() {
         return label;
     },
 
-// Add this helper function to format time labels for mobile
-formatTimeLabel: function(label) {
-    if (window.innerWidth <= 768) {
-        // For mobile, use shorter time format
-        return label.replace(/(\d+:\d+)-(\d+:\d+)/, (match, start, end) => {
-            return `${start.replace(':','')}-${end.replace(':','')}`;
-        });
-    }
-    return label;
-},
+
     
     clearRoutineDisplay: function() {
         this.routineDisplay.innerHTML = `
