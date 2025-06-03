@@ -1192,11 +1192,11 @@ const routineGenerator = {
         this.labSessionContainer.style.display = 'none';
         
         this.theoryDays[0].value = 'Sunday';
-        this.theoryTimes[0].value = '08:00';
+        this.theoryTimes[0].value = '08:30';
         this.theoryDurations[0].value = '1.5';
         
-        this.theoryDays[1].value = 'Sunday';
-        this.theoryTimes[1].value = '09:30';
+        this.theoryDays[1].value = 'Monday';
+        this.theoryTimes[1].value = '08:30';
         this.theoryDurations[1].value = '1.5';
         
         this.labDay.value = 'Sunday';
