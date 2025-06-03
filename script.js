@@ -956,7 +956,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Routine Generator Functionality
- // Routine Generator Functionality
+// Routine Generator Functionality with Section Support
 const routineGenerator = {
     courses: [],
     init: function() {
@@ -969,6 +969,7 @@ const routineGenerator = {
         this.courseCodeInput = document.getElementById('course-code');
         this.courseTitleInput = document.getElementById('course-title');
         this.courseTypeInput = document.getElementById('course-type');
+        this.sectionInput = document.getElementById('course-section');
         this.theorySessionsContainer = document.getElementById('theory-sessions-container');
         this.labSessionContainer = document.getElementById('lab-session-container');
         this.facultyInput = document.getElementById('faculty-name');
@@ -1018,6 +1019,7 @@ const routineGenerator = {
         const code = this.courseCodeInput.value.trim();
         const title = this.courseTitleInput.value.trim();
         const type = this.courseTypeInput.value;
+        const section = this.sectionInput.value;
         const faculty = this.facultyInput.value.trim();
         const room = this.roomInput.value.trim();
         
@@ -1070,6 +1072,7 @@ const routineGenerator = {
             code,
             title,
             type,
+            section,
             faculty,
             room,
             sessions
@@ -1108,6 +1111,7 @@ const routineGenerator = {
                     <div>
                         <strong>${course.code}</strong>
                         <span class="course-item-type ${course.type}">${course.type === 'theory' ? 'Theory' : 'Lab'}</span>
+                        <span class="course-item-section">Sec ${course.section}</span>
                     </div>
                     <div class="course-item-sessions">${sessionsText}</div>
                     <div>${course.faculty} ${course.room ? '· Room: ' + course.room : ''}</div>
@@ -1154,6 +1158,7 @@ const routineGenerator = {
         this.courseCodeInput.value = course.code;
         this.courseTitleInput.value = course.title;
         this.courseTypeInput.value = course.type;
+        this.sectionInput.value = course.section;
         this.facultyInput.value = course.faculty;
         this.roomInput.value = course.room || '';
         
@@ -1185,6 +1190,7 @@ const routineGenerator = {
         this.courseCodeInput.value = '';
         this.courseTitleInput.value = '';
         this.courseTypeInput.value = 'theory';
+        this.sectionInput.value = '1';
         this.facultyInput.value = '';
         this.roomInput.value = '';
         
@@ -1192,11 +1198,11 @@ const routineGenerator = {
         this.labSessionContainer.style.display = 'none';
         
         this.theoryDays[0].value = 'Sunday';
-        this.theoryTimes[0].value = '08:30';
+        this.theoryTimes[0].value = '08:00';
         this.theoryDurations[0].value = '1.5';
         
-        this.theoryDays[1].value = 'Monday';
-        this.theoryTimes[1].value = '08:30';
+        this.theoryDays[1].value = 'Sunday';
+        this.theoryTimes[1].value = '09:30';
         this.theoryDurations[1].value = '1.5';
         
         this.labDay.value = 'Sunday';
@@ -1316,7 +1322,7 @@ const routineGenerator = {
                 const { course, session, sessionIndex } = courseData;
                 const isLab = course.type === 'lab';
                 const roomPrefix = isLab ? 'Lab' : 'R';
-                const sectionInfo = isLab ? 'Lab' : (course.sessions.length > 1 ? 'Sec' + (sessionIndex + 1) : '');
+                const sectionInfo = isLab ? 'Lab' : `Sec ${course.section}`;
 
                 // Mark subsequent slots as rendered
                 for (let i = 1; i < cell.rowspan; i++) {
@@ -1328,7 +1334,7 @@ const routineGenerator = {
                 html += `
                     <td class="course-slot" rowspan="${cell.rowspan}">
                         <div class="course-block ${isLab ? 'lab-block' : ''}">
-                            <div class="course-code">${course.code} ${sectionInfo}</div>
+                            <div class="course-code">${course.code} <span class="course-section">${sectionInfo}</span></div>
                             <div class="course-room">${roomPrefix}: ${course.room || 'N/A'}</div>
                             <div class="course-faculty">${course.faculty || ''}</div>
                         </div>
@@ -1390,6 +1396,13 @@ const routineGenerator = {
                         .course-block { background-color: #e7f5ff; border-radius: 4px; padding: 5px; margin: 2px; }
                         .lab-block { background-color: #fff3bf; }
                         .course-code { font-weight: bold; font-size: 0.9rem; }
+                        .course-section {
+                            font-size: 0.7rem;
+                            background-color: #0056b3;
+                            color: white;
+                            padding: 1px 4px;
+                            border-radius: 3px;
+                        }
                         .course-room { font-size: 0.8rem; }
                         .course-faculty { font-size: 0.8rem; font-style: italic; }
                         h1 { color: #0056b3; text-align: center; margin-bottom: 5px; }
@@ -1425,66 +1438,66 @@ const routineGenerator = {
     },
 
     downloadRoutineAsImage: function() {
-    if (this.courses.length === 0) {
-        showToast('Please generate a routine first', 'error');
-        return;
-    }
+        if (this.courses.length === 0) {
+            showToast('Please generate a routine first', 'error');
+            return;
+        }
 
-    const routineContainer = document.querySelector('.routine-table-container');
-    
-    if (!routineContainer) {
-        showToast('No routine to download', 'error');
-        return;
-    }
-
-    showToast('Generating image... please wait', 'info');
-    
-    // Store original styles
-    const originalOverflow = routineContainer.style.overflow;
-    const originalWidth = routineContainer.style.width;
-    
-    // Temporarily adjust styles for capture
-    routineContainer.style.overflow = 'visible';
-    routineContainer.style.width = 'fit-content';
-    
-    // Temporarily hide the print button to avoid it appearing in the image
-    const printBtn = document.getElementById('print-routine');
-    const originalDisplay = printBtn.style.display;
-    printBtn.style.display = 'none';
-
-    html2canvas(routineContainer, {
-        scale: 2,
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: routineContainer.scrollWidth,
-        windowHeight: routineContainer.scrollHeight,
-        backgroundColor: getComputedStyle(document.body).getPropertyValue('--card-bg')
-    }).then(canvas => {
-        // Restore original styles
-        routineContainer.style.overflow = originalOverflow;
-        routineContainer.style.width = originalWidth;
-        printBtn.style.display = originalDisplay;
-
-        // Create download link
-        const link = document.createElement('a');
-        link.download = 'EWU_Routine_' + new Date().toISOString().slice(0, 10) + '.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+        const routineContainer = document.querySelector('.routine-table-container');
         
-        showToast('Routine downloaded as image', 'success');
-    }).catch(err => {
-        // Restore original styles
-        routineContainer.style.overflow = originalOverflow;
-        routineContainer.style.width = originalWidth;
-        printBtn.style.display = originalDisplay;
+        if (!routineContainer) {
+            showToast('No routine to download', 'error');
+            return;
+        }
+
+        showToast('Generating image... please wait', 'info');
         
-        console.error('Error generating image:', err);
-        showToast('Failed to generate image', 'error');
-    });
-}
+        // Store original styles
+        const originalOverflow = routineContainer.style.overflow;
+        const originalWidth = routineContainer.style.width;
+        
+        // Temporarily adjust styles for capture
+        routineContainer.style.overflow = 'visible';
+        routineContainer.style.width = 'fit-content';
+        
+        // Temporarily hide the print button to avoid it appearing in the image
+        const printBtn = document.getElementById('print-routine');
+        const originalDisplay = printBtn.style.display;
+        printBtn.style.display = 'none';
+
+        html2canvas(routineContainer, {
+            scale: 2,
+            logging: false,
+            useCORS: true,
+            allowTaint: true,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: routineContainer.scrollWidth,
+            windowHeight: routineContainer.scrollHeight,
+            backgroundColor: getComputedStyle(document.body).getPropertyValue('--card-bg')
+        }).then(canvas => {
+            // Restore original styles
+            routineContainer.style.overflow = originalOverflow;
+            routineContainer.style.width = originalWidth;
+            printBtn.style.display = originalDisplay;
+
+            // Create download link
+            const link = document.createElement('a');
+            link.download = 'EWU_Routine_' + new Date().toISOString().slice(0, 10) + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+            showToast('Routine downloaded as image', 'success');
+        }).catch(err => {
+            // Restore original styles
+            routineContainer.style.overflow = originalOverflow;
+            routineContainer.style.width = originalWidth;
+            printBtn.style.display = originalDisplay;
+            
+            console.error('Error generating image:', err);
+            showToast('Failed to generate image', 'error');
+        });
+    }
 };
 
     
