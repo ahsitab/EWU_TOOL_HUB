@@ -1693,7 +1693,149 @@ const routineGenerator = {
         });
     },
 
- 
+    exportToICal: function() {
+        if (this.courses.length === 0) {
+            showToast('No courses to export', 'error');
+            return;
+        }
+
+        let icalContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//EWU Tools Hub//Class Routine//EN',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH'
+        ];
+
+        // Add events for each course session
+        this.courses.forEach(course => {
+            course.sessions.forEach((session, index) => {
+                const startDate = this.getNextDayOfWeek(session.day);
+                if (!startDate) return;
+
+                const [hours, minutes] = session.time.split(':').map(Number);
+                startDate.setHours(hours, minutes, 0);
+
+                const endDate = new Date(startDate);
+                endDate.setHours(startDate.getHours() + Math.floor(session.duration));
+                endDate.setMinutes(startDate.getMinutes() + Math.round((session.duration % 1) * 60));
+
+                const eventId = `${course.id}-${index}-${Date.now()}`;
+                const now = new Date();
+                const isLab = course.type === 'lab';
+                const location = course.room ? (isLab ? `Lab ${course.room}` : `Room ${course.room}`) : 'TBA';
+
+                icalContent.push(
+                    'BEGIN:VEVENT',
+                    `UID:${eventId}@ewutoolshub.com`,
+                    `DTSTAMP:${this.formatICalDate(now)}`,
+                    `DTSTART:${this.formatICalDate(startDate)}`,
+                    `DTEND:${this.formatICalDate(endDate)}`,
+                    `SUMMARY:${course.code} ${isLab ? '(Lab)' : ''} - ${course.title}`,
+                    `DESCRIPTION:${course.faculty}\\nSection: ${course.section}`,
+                    `LOCATION:${location}`,
+                    'RRULE:FREQ=WEEKLY;COUNT=16', // Assuming 16 weeks in a semester
+                    'BEGIN:VALARM',
+                    'TRIGGER:-PT15M',
+                    'ACTION:DISPLAY',
+                    `DESCRIPTION:Reminder: ${course.code} class`,
+                    'END:VALARM',
+                    'END:VEVENT'
+                );
+            });
+        });
+
+        icalContent.push('END:VCALENDAR');
+
+        // Create download link
+        const blob = new Blob([icalContent.join('\r\n')], { type: 'text/calendar' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `EWU_Routine_${new Date().toISOString().slice(0, 10)}.ics`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showToast('iCal file downloaded', 'success');
+    },
+
+exportToPDF: function() {
+    if (this.courses.length === 0) {
+        showToast('No routine to export', 'error');
+        return;
+    }
+
+    showToast('Preparing PDF... please wait', 'info');
+
+    const routineContainer = document.querySelector('.routine-table-container');
+    if (!routineContainer) return;
+
+    // Temporarily adjust styles for better PDF rendering
+    const originalWidth = routineContainer.style.width;
+    const originalOverflow = routineContainer.style.overflow;
+    
+    // Set explicit width and allow overflow for capture
+    routineContainer.style.width = 'fit-content';
+    routineContainer.style.overflow = 'visible';
+
+    // Hide elements we don't want in the PDF
+    const exportButtons = document.querySelector('.export-buttons');
+    const conflictWarnings = document.getElementById('conflict-warnings');
+    const originalExportDisplay = exportButtons?.style.display;
+    const originalWarningsDisplay = conflictWarnings?.style.display;
+    
+    if (exportButtons) exportButtons.style.display = 'none';
+    if (conflictWarnings) conflictWarnings.style.display = 'none';
+
+    // Calculate scaling based on table width
+    const tableWidth = routineContainer.scrollWidth;
+    const pageWidth = 297; // A4 width in mm (landscape)
+    const scale = Math.min(1, (pageWidth * 3.78) / tableWidth); // 1mm ≈ 3.78px
+
+    const options = {
+        scale: scale,
+        logging: false,
+        useCORS: true,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: routineContainer.scrollWidth,
+        windowHeight: routineContainer.scrollHeight,
+        backgroundColor: getComputedStyle(document.body).getPropertyValue('--card-bg')
+    };
+
+    html2canvas(routineContainer, options).then(canvas => {
+        // Restore original styles
+        routineContainer.style.width = originalWidth;
+        routineContainer.style.overflow = originalOverflow;
+        if (exportButtons) exportButtons.style.display = originalExportDisplay;
+        if (conflictWarnings) conflictWarnings.style.display = originalWarningsDisplay;
+
+        // Create PDF
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('l', 'mm', 'a4');
+        
+        // Calculate image dimensions to fit the PDF page
+        const imgWidth = pageWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        // Add image to PDF
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        pdf.save(`EWU_Routine_${new Date().toISOString().slice(0, 10)}.pdf`);
+        
+        showToast('PDF downloaded successfully', 'success');
+    }).catch(err => {
+        console.error('Error generating PDF:', err);
+        showToast('Failed to generate PDF', 'error');
+        
+        // Restore original styles in case of error
+        routineContainer.style.width = originalWidth;
+        routineContainer.style.overflow = originalOverflow;
+        if (exportButtons) exportButtons.style.display = originalExportDisplay;
+        if (conflictWarnings) conflictWarnings.style.display = originalWarningsDisplay;
+    });
+},
 
     // Helper functions
     getNextDayOfWeek: function(dayName) {
