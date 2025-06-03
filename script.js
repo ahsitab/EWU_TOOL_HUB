@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', function() {
     // Theme Management
     const themeToggle = document.getElementById('theme-toggle');
@@ -1213,150 +1214,635 @@ const routineGenerator = {
     },
     
   // Update the generateRoutine function in the routineGenerator object
-generateRoutine: function() {
-    if (this.courses.length === 0) {
-        this.clearRoutineDisplay();
-        return;
-    }
+    generateRoutine: function() {
+        if (this.courses.length === 0) {
+            this.clearRoutineDisplay();
+            return;
+        }
 
-    const days = [
-        { name: 'Sunday', abbr: 'Sun' },
-        { name: 'Monday', abbr: 'Mon' },
-        { name: 'Tuesday', abbr: 'Tue' },
-        { name: 'Wednesday', abbr: 'Wed' },
-        { name: 'Thursday', abbr: 'Thu' }
-    ];
+        const days = [
+            { name: 'Sunday', abbr: 'Sun' },
+            { name: 'Monday', abbr: 'Mon' },
+            { name: 'Tuesday', abbr: 'Tue' },
+            { name: 'Wednesday', abbr: 'Wed' },
+            { name: 'Thursday', abbr: 'Thu' }
+        ];
 
-    // Adjust time slots for better mobile display
-    const timeSlots = [
-        { start: '8:30', end: '10:00', label: '8:30-10:00' },
-        { start: '10:10', end: '11:40', label: '10:10-11:40' },
-        { start: '11:50', end: '13:20', label: '11:50-1:20' },
-        { start: '13:30', end: '15:00', label: '1:30-3:00' },
-        { start: '15:10', end: '16:40', label: '3:10-4:40' },
-        { start: '16:50', end: '18:20', label: '4:50-6:20' }
-    ];
+        // Time slots with proper formatting
+        const timeSlots = [
+            { start: '8:30', end: '10:00', label: '8:30-10:00' },
+            { start: '10:10', end: '11:40', label: '10:10-11:40' },
+            { start: '11:50', end: '13:20', label: '11:50-1:20' },
+            { start: '13:30', end: '15:00', label: '1:30-3:00' },
+            { start: '15:10', end: '16:40', label: '3:10-4:40' },
+            { start: '16:50', end: '18:20', label: '4:50-6:20' }
+        ];
 
-    // Create a grid to represent the routine table
-    const routineGrid = days.map(() => {
-        return timeSlots.map(() => ({
-            courses: [],
-            rendered: false,
-            rowspan: 1
-        }));
-    });
+        // Create a grid to represent the routine table
+        const routineGrid = days.map(() => {
+            return timeSlots.map(() => ({
+                courses: [],
+                rendered: false,
+                rowspan: 1,
+                hasConflict: false
+            }));
+        });
 
-    // First pass: Populate the grid with exact matches
-    this.courses.forEach(course => {
-        course.sessions.forEach((session, sessionIndex) => {
-            const dayIndex = days.findIndex(d => d.name === session.day);
-            if (dayIndex === -1) return;
+        // Track faculty schedules for conflict detection
+        const facultySchedules = {};
+        const roomSchedules = {};
 
-            const sessionStart = this.timeToMinutes(session.time);
-            const sessionEnd = sessionStart + (session.duration * 60);
+        // First pass: Populate the grid and detect conflicts
+        this.courses.forEach(course => {
+            course.sessions.forEach(session => {
+                const dayIndex = days.findIndex(d => d.name === session.day);
+                if (dayIndex === -1) return;
 
-            // Find the best matching time slot
-            let bestSlotIndex = -1;
-            let bestOverlap = 0;
+                const sessionStart = this.timeToMinutes(session.time);
+                const sessionEnd = sessionStart + (session.duration * 60);
+
+                // Find the best matching time slot
+                let bestSlotIndex = -1;
+                let bestOverlap = 0;
+                
+                timeSlots.forEach((slot, slotIndex) => {
+                    const slotStart = this.timeToMinutes(slot.start);
+                    const slotEnd = this.timeToMinutes(slot.end);
+                    
+                    // Calculate overlap
+                    const overlapStart = Math.max(sessionStart, slotStart);
+                    const overlapEnd = Math.min(sessionEnd, slotEnd);
+                    const overlap = Math.max(0, overlapEnd - overlapStart);
+                    
+                    if (overlap > bestOverlap) {
+                        bestOverlap = overlap;
+                        bestSlotIndex = slotIndex;
+                    }
+                });
+
+                if (bestSlotIndex !== -1) {
+                    // Calculate how many slots this session spans
+                    const slotDuration = this.timeToMinutes(timeSlots[bestSlotIndex].end) - 
+                                        this.timeToMinutes(timeSlots[bestSlotIndex].start);
+                    const rowspan = Math.ceil(session.duration * 60 / slotDuration);
+                    
+                    // Track faculty schedule
+                    if (!facultySchedules[course.faculty]) {
+                        facultySchedules[course.faculty] = [];
+                    }
+                    facultySchedules[course.faculty].push({
+                        day: dayIndex,
+                        slot: bestSlotIndex,
+                        rowspan,
+                        courseCode: course.code
+                    });
+
+                    // Track room schedule
+                    if (course.room) {
+                        if (!roomSchedules[course.room]) {
+                            roomSchedules[course.room] = [];
+                        }
+                        roomSchedules[course.room].push({
+                            day: dayIndex,
+                            slot: bestSlotIndex,
+                            rowspan,
+                            courseCode: course.code
+                        });
+                    }
+
+                    routineGrid[dayIndex][bestSlotIndex].courses.push({
+                        course,
+                        session,
+                        rowspan
+                    });
+                    routineGrid[dayIndex][bestSlotIndex].rowspan = rowspan;
+                }
+            });
+        });
+
+        // Second pass: Detect conflicts
+        // Faculty conflicts
+        Object.entries(facultySchedules).forEach(([faculty, schedules]) => {
+            if (schedules.length > 1) {
+                // Check for overlapping schedules
+                const facultyConflicts = this.findConflicts(schedules);
+                facultyConflicts.forEach(conflict => {
+                    conflict.slots.forEach(slot => {
+                        routineGrid[conflict.day][slot].hasConflict = true;
+                    });
+                });
+            }
+        });
+
+        // Room conflicts
+        Object.entries(roomSchedules).forEach(([room, schedules]) => {
+            if (schedules.length > 1) {
+                const roomConflicts = this.findConflicts(schedules);
+                roomConflicts.forEach(conflict => {
+                    conflict.slots.forEach(slot => {
+                        routineGrid[conflict.day][slot].hasConflict = true;
+                    });
+                });
+            }
+        });
+
+        // Generate HTML from the grid
+        let html = `
+            <div class="routine-table-container">
+                <table class="routine-table">
+                    <thead>
+                        <tr>
+                            <th class="day-col">Day/Time</th>
+                            ${timeSlots.map(slot => `<th>${this.formatTimeLabel(slot.label)}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        days.forEach((day, dayIndex) => {
+            html += `<tr><td class="day-col">${day.abbr}</td>`;
             
             timeSlots.forEach((slot, slotIndex) => {
-                const slotStart = this.timeToMinutes(slot.start);
-                const slotEnd = this.timeToMinutes(slot.end);
+                const cell = routineGrid[dayIndex][slotIndex];
                 
-                // Calculate overlap
-                const overlapStart = Math.max(sessionStart, slotStart);
-                const overlapEnd = Math.min(sessionEnd, slotEnd);
-                const overlap = Math.max(0, overlapEnd - overlapStart);
+                if (cell.rendered || cell.courses.length === 0) {
+                    html += cell.rendered ? '' : '<td></td>';
+                    return;
+                }
+
+                // Take the first course (we've already matched them properly)
+                const courseData = cell.courses[0];
+                if (!courseData) {
+                    html += '<td></td>';
+                    return;
+                }
+
+                const { course, session } = courseData;
+                const isLab = course.type === 'lab';
+                const roomPrefix = isLab ? 'Lab' : 'R';
+                const sectionInfo = isLab ? 'Lab' : `Sec ${course.section}`;
+                const conflictClass = cell.hasConflict ? 'conflict-slot' : '';
+
+                // Mark subsequent slots as rendered
+                for (let i = 1; i < cell.rowspan; i++) {
+                    if (slotIndex + i < timeSlots.length) {
+                        routineGrid[dayIndex][slotIndex + i].rendered = true;
+                    }
+                }
+
+                html += `
+                    <td class="course-slot ${conflictClass}" rowspan="${cell.rowspan}" 
+                        data-day="${dayIndex}" data-slot="${slotIndex}" 
+                        data-course-id="${course.id}" draggable="true">
+                        <div class="course-block ${isLab ? 'lab-block' : 'theory-block'}">
+                            <div class="course-code">${course.code} <span class="course-section">${sectionInfo}</span></div>
+                            <div class="course-room">${roomPrefix}: ${course.room || 'N/A'}</div>
+                            <div class="course-faculty">${course.faculty || ''}</div>
+                        </div>
+                    </td>
+                `;
+            });
+            
+            html += '</tr>';
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Export Buttons -->
+            <div class="export-buttons">
+                <button id="export-ical" class="btn export-btn">
+                    <i class="fas fa-calendar-plus"></i> Export to iCal
+                </button>
+                <button id="export-pdf" class="btn export-btn">
+                    <i class="fas fa-file-pdf"></i> Export as PDF
+                </button>
+            </div>
+            
+            <!-- Conflict Warnings -->
+            <div id="conflict-warnings"></div>
+        `;
+
+        this.routineDisplay.innerHTML = html;
+        this.printBtn.disabled = false;
+        this.downloadBtn.disabled = false;
+        
+        // Add drag and drop functionality
+        this.setupDragAndDrop();
+        
+        // Add export button event listeners
+        document.getElementById('export-ical')?.addEventListener('click', this.exportToICal.bind(this));
+        document.getElementById('export-pdf')?.addEventListener('click', this.exportToPDF.bind(this));
+        
+        // Show conflict warnings if any
+        this.showConflictWarnings(routineGrid);
+    },
+
+    findConflicts: function(schedules) {
+        // Group by day
+        const conflicts = [];
+        const days = {};
+        
+        schedules.forEach(schedule => {
+            if (!days[schedule.day]) {
+                days[schedule.day] = [];
+            }
+            days[schedule.day].push(schedule);
+        });
+        
+        // Check for overlapping slots on each day
+        Object.entries(days).forEach(([day, daySchedules]) => {
+            if (daySchedules.length > 1) {
+                // Sort by slot
+                daySchedules.sort((a, b) => a.slot - b.slot);
                 
-                if (overlap > bestOverlap) {
-                    bestOverlap = overlap;
-                    bestSlotIndex = slotIndex;
+                // Check for overlaps
+                for (let i = 0; i < daySchedules.length - 1; i++) {
+                    const current = daySchedules[i];
+                    const next = daySchedules[i + 1];
+                    
+                    if (next.slot < current.slot + current.rowspan) {
+                        // Conflict found
+                        const conflict = {
+                            day: parseInt(day),
+                            slots: [],
+                            courses: []
+                        };
+                        
+                        // Add all overlapping slots
+                        const startSlot = Math.min(current.slot, next.slot);
+                        const endSlot = Math.max(current.slot + current.rowspan, next.slot + next.rowspan);
+                        
+                        for (let s = startSlot; s < endSlot; s++) {
+                            conflict.slots.push(s);
+                        }
+                        
+                        conflict.courses.push(current.courseCode, next.courseCode);
+                        conflicts.push(conflict);
+                    }
+                }
+            }
+        });
+        
+        return conflicts;
+    },
+
+    showConflictWarnings: function(routineGrid) {
+        const warningsContainer = document.getElementById('conflict-warnings');
+        if (!warningsContainer) return;
+        
+        let hasConflicts = false;
+        let warningHTML = '<h3>Schedule Warnings</h3><ul>';
+        
+        // Check for faculty conflicts
+        const facultyMap = {};
+        this.courses.forEach(course => {
+            if (!facultyMap[course.faculty]) {
+                facultyMap[course.faculty] = [];
+            }
+            facultyMap[course.faculty].push(course);
+        });
+        
+        Object.entries(facultyMap).forEach(([faculty, courses]) => {
+            if (courses.length > 1) {
+                // Check if any of these courses have conflicts
+                let facultyHasConflict = false;
+                const conflictCourses = [];
+                
+                courses.forEach(course => {
+                    course.sessions.forEach(session => {
+                        const dayIndex = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].indexOf(session.day);
+                        if (dayIndex === -1) return;
+                        
+                        const sessionStart = this.timeToMinutes(session.time);
+                        const sessionEnd = sessionStart + (session.duration * 60);
+                        
+                        // Check if this session overlaps with any other session for this faculty
+                        courses.forEach(otherCourse => {
+                            if (otherCourse.id === course.id) return;
+                            
+                            otherCourse.sessions.forEach(otherSession => {
+                                const otherDayIndex = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].indexOf(otherSession.day);
+                                if (otherDayIndex !== dayIndex) return;
+                                
+                                const otherStart = this.timeToMinutes(otherSession.time);
+                                const otherEnd = otherStart + (otherSession.duration * 60);
+                                
+                                if (sessionStart < otherEnd && sessionEnd > otherStart) {
+                                    // Conflict found
+                                    facultyHasConflict = true;
+                                    if (!conflictCourses.includes(course.code)) {
+                                        conflictCourses.push(course.code);
+                                    }
+                                    if (!conflictCourses.includes(otherCourse.code)) {
+                                        conflictCourses.push(otherCourse.code);
+                                    }
+                                }
+                            });
+                        });
+                    });
+                });
+                
+                if (facultyHasConflict) {
+                    hasConflicts = true;
+                    warningHTML += `<li>
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <strong>Faculty Conflict:</strong> ${faculty} is scheduled for multiple classes at the same time (${conflictCourses.join(', ')})
+                    </li>`;
+                }
+            }
+        });
+        
+        // Check for room conflicts
+        const roomMap = {};
+        this.courses.forEach(course => {
+            if (!course.room) return;
+            if (!roomMap[course.room]) {
+                roomMap[course.room] = [];
+            }
+            roomMap[course.room].push(course);
+        });
+        
+        Object.entries(roomMap).forEach(([room, courses]) => {
+            if (courses.length > 1) {
+                let roomHasConflict = false;
+                const conflictCourses = [];
+                
+                courses.forEach(course => {
+                    course.sessions.forEach(session => {
+                        const dayIndex = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].indexOf(session.day);
+                        if (dayIndex === -1) return;
+                        
+                        const sessionStart = this.timeToMinutes(session.time);
+                        const sessionEnd = sessionStart + (session.duration * 60);
+                        
+                        courses.forEach(otherCourse => {
+                            if (otherCourse.id === course.id) return;
+                            
+                            otherCourse.sessions.forEach(otherSession => {
+                                const otherDayIndex = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'].indexOf(otherSession.day);
+                                if (otherDayIndex !== dayIndex) return;
+                                
+                                const otherStart = this.timeToMinutes(otherSession.time);
+                                const otherEnd = otherStart + (otherSession.duration * 60);
+                                
+                                if (sessionStart < otherEnd && sessionEnd > otherStart) {
+                                    // Conflict found
+                                    roomHasConflict = true;
+                                    if (!conflictCourses.includes(course.code)) {
+                                        conflictCourses.push(course.code);
+                                    }
+                                    if (!conflictCourses.includes(otherCourse.code)) {
+                                        conflictCourses.push(otherCourse.code);
+                                    }
+                                }
+                            });
+                        });
+                    });
+                });
+                
+                if (roomHasConflict) {
+                    hasConflicts = true;
+                    warningHTML += `<li>
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <strong>Room Conflict:</strong> Room ${room} has multiple classes scheduled at the same time (${conflictCourses.join(', ')})
+                    </li>`;
+                }
+            }
+        });
+        
+        warningHTML += '</ul>';
+        
+        if (!hasConflicts) {
+            warningHTML = '<div class="no-conflicts"><i class="fas fa-check-circle"></i> No schedule conflicts detected</div>';
+        }
+        
+        warningsContainer.innerHTML = warningHTML;
+    },
+
+    setupDragAndDrop: function() {
+        const slots = document.querySelectorAll('.course-slot');
+        let draggedSlot = null;
+
+        slots.forEach(slot => {
+            slot.addEventListener('dragstart', (e) => {
+                draggedSlot = slot;
+                e.dataTransfer.setData('text/plain', slot.dataset.courseId);
+                setTimeout(() => {
+                    slot.style.opacity = '0.4';
+                }, 0);
+            });
+
+            slot.addEventListener('dragend', () => {
+                slot.style.opacity = '1';
+                draggedSlot = null;
+            });
+
+            slot.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (draggedSlot !== slot) {
+                    slot.style.backgroundColor = 'rgba(0, 206, 201, 0.2)';
                 }
             });
 
-            if (bestSlotIndex !== -1) {
-                // Calculate how many slots this session spans
-                const slotDuration = this.timeToMinutes(timeSlots[bestSlotIndex].end) - 
-                                    this.timeToMinutes(timeSlots[bestSlotIndex].start);
-                const rowspan = Math.ceil(session.duration * 60 / slotDuration);
+            slot.addEventListener('dragleave', () => {
+                slot.style.backgroundColor = '';
+            });
+
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                slot.style.backgroundColor = '';
                 
-                routineGrid[dayIndex][bestSlotIndex].courses.push({
-                    course,
-                    session,
-                    sessionIndex
-                });
-                routineGrid[dayIndex][bestSlotIndex].rowspan = rowspan;
-            }
-        });
-    });
-
-    // Generate HTML from the grid
-    let html = `
-        <div class="routine-table-container">
-            <table class="routine-table">
-                <thead>
-                    <tr>
-                        <th class="day-col">Day/Time</th>
-                        ${timeSlots.map(slot => `<th>${this.formatTimeLabel(slot.label)}</th>`).join('')}
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-
-    days.forEach((day, dayIndex) => {
-        html += `<tr><td class="day-col">${day.abbr}</td>`;
-        
-        timeSlots.forEach((slot, slotIndex) => {
-            const cell = routineGrid[dayIndex][slotIndex];
-            
-            if (cell.rendered || cell.courses.length === 0) {
-                html += cell.rendered ? '' : '<td></td>';
-                return;
-            }
-
-            // Take the first course (we've already matched them properly)
-            const courseData = cell.courses[0];
-            if (!courseData) {
-                html += '<td></td>';
-                return;
-            }
-
-            const { course, session, sessionIndex } = courseData;
-            const isLab = course.type === 'lab';
-            const roomPrefix = isLab ? 'Lab' : 'R';
-            const sectionInfo = isLab ? 'Lab' : `Sec ${course.section}`;
-
-            // Mark subsequent slots as rendered
-            for (let i = 1; i < cell.rowspan; i++) {
-                if (slotIndex + i < timeSlots.length) {
-                    routineGrid[dayIndex][slotIndex + i].rendered = true;
+                if (draggedSlot && draggedSlot !== slot) {
+                    const courseId = parseInt(e.dataTransfer.getData('text/plain'));
+                    const targetDay = parseInt(slot.dataset.day);
+                    const targetSlot = parseInt(slot.dataset.slot);
+                    
+                    // Find the course
+                    const course = this.courses.find(c => c.id === courseId);
+                    if (!course) return;
+                    
+                    // Update the course session time based on the new slot
+                    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+                    const timeSlots = [
+                        { start: '8:30', end: '10:00' },
+                        { start: '10:10', end: '11:40' },
+                        { start: '11:50', end: '13:20' },
+                        { start: '13:30', end: '15:00' },
+                        { start: '15:10', end: '16:40' },
+                        { start: '16:50', end: '18:20' }
+                    ];
+                    
+                    // Update the course session
+                    course.sessions.forEach(session => {
+                        session.day = days[targetDay];
+                        session.time = timeSlots[targetSlot].start;
+                        
+                        // Calculate duration based on rowspan
+                        const rowspan = parseInt(slot.getAttribute('rowspan') || 1);
+                        const slotDuration = this.timeToMinutes(timeSlots[targetSlot].end) - 
+                                           this.timeToMinutes(timeSlots[targetSlot].start);
+                        session.duration = (rowspan * slotDuration) / 60;
+                    });
+                    
+                    // Regenerate the routine
+                    this.generateRoutine();
                 }
-            }
-
-            html += `
-                <td class="course-slot" rowspan="${cell.rowspan}">
-                    <div class="course-block ${isLab ? 'lab-block' : ''}">
-                        <div class="course-code">${course.code} <span class="course-section">${sectionInfo}</span></div>
-                        <div class="course-room">${roomPrefix}: ${course.room || 'N/A'}</div>
-                        <div class="course-faculty">${course.faculty || ''}</div>
-                    </div>
-                </td>
-            `;
+            });
         });
+    },
+
+    exportToICal: function() {
+        if (this.courses.length === 0) {
+            showToast('No courses to export', 'error');
+            return;
+        }
+
+        let icalContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//EWU Tools Hub//Class Routine//EN',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH'
+        ];
+
+        // Add events for each course session
+        this.courses.forEach(course => {
+            course.sessions.forEach((session, index) => {
+                const startDate = this.getNextDayOfWeek(session.day);
+                if (!startDate) return;
+
+                const [hours, minutes] = session.time.split(':').map(Number);
+                startDate.setHours(hours, minutes, 0);
+
+                const endDate = new Date(startDate);
+                endDate.setHours(startDate.getHours() + Math.floor(session.duration));
+                endDate.setMinutes(startDate.getMinutes() + Math.round((session.duration % 1) * 60));
+
+                const eventId = `${course.id}-${index}-${Date.now()}`;
+                const now = new Date();
+                const isLab = course.type === 'lab';
+                const location = course.room ? (isLab ? `Lab ${course.room}` : `Room ${course.room}`) : 'TBA';
+
+                icalContent.push(
+                    'BEGIN:VEVENT',
+                    `UID:${eventId}@ewutoolshub.com`,
+                    `DTSTAMP:${this.formatICalDate(now)}`,
+                    `DTSTART:${this.formatICalDate(startDate)}`,
+                    `DTEND:${this.formatICalDate(endDate)}`,
+                    `SUMMARY:${course.code} ${isLab ? '(Lab)' : ''} - ${course.title}`,
+                    `DESCRIPTION:${course.faculty}\\nSection: ${course.section}`,
+                    `LOCATION:${location}`,
+                    'RRULE:FREQ=WEEKLY;COUNT=16', // Assuming 16 weeks in a semester
+                    'BEGIN:VALARM',
+                    'TRIGGER:-PT15M',
+                    'ACTION:DISPLAY',
+                    `DESCRIPTION:Reminder: ${course.code} class`,
+                    'END:VALARM',
+                    'END:VEVENT'
+                );
+            });
+        });
+
+        icalContent.push('END:VCALENDAR');
+
+        // Create download link
+        const blob = new Blob([icalContent.join('\r\n')], { type: 'text/calendar' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `EWU_Routine_${new Date().toISOString().slice(0, 10)}.ics`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showToast('iCal file downloaded', 'success');
+    },
+
+exportToPDF: function() {
+    if (this.courses.length === 0) {
+        showToast('No routine to export', 'error');
+        return;
+    }
+
+    showToast('Preparing PDF...', 'info');
+
+    const routineContainer = document.querySelector('.routine-table-container');
+    if (!routineContainer) return;
+
+    // Temporarily hide buttons and warnings for cleaner PDF
+    const exportButtons = document.querySelector('.export-buttons');
+    const conflictWarnings = document.getElementById('conflict-warnings');
+    const originalExportDisplay = exportButtons?.style.display;
+    const originalWarningsDisplay = conflictWarnings?.style.display;
+
+    if (exportButtons) exportButtons.style.display = 'none';
+    if (conflictWarnings) conflictWarnings.style.display = 'none';
+
+    // Calculate the scale based on table width
+    const tableWidth = routineContainer.scrollWidth;
+    const pageWidth = 297; // A4 width in mm (landscape)
+    const scale = (pageWidth * 2.83465) / tableWidth; // Convert mm to px (1mm = 2.83465px)
+
+    html2canvas(routineContainer, {
+        scale: scale, // Dynamic scale based on table width
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: routineContainer.scrollWidth,
+        windowHeight: routineContainer.scrollHeight,
+        backgroundColor: getComputedStyle(document.body).getPropertyValue('--card-bg')
+    }).then(canvas => {
+        // Restore original display
+        if (exportButtons) exportButtons.style.display = originalExportDisplay;
+        if (conflictWarnings) conflictWarnings.style.display = originalWarningsDisplay;
+
+        // Create PDF
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('l', 'mm', 'a4');
+        const imgWidth = pageWidth; // A4 width in mm (landscape)
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
-        html += '</tr>';
+        // Add image to PDF
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        pdf.save(`EWU_Routine_${new Date().toISOString().slice(0, 10)}.pdf`);
+        
+        showToast('PDF downloaded', 'success');
+    }).catch(err => {
+        console.error('Error generating PDF:', err);
+        showToast('Failed to generate PDF', 'error');
+        
+        // Restore original display in case of error
+        if (exportButtons) exportButtons.style.display = originalExportDisplay;
+        if (conflictWarnings) conflictWarnings.style.display = originalWarningsDisplay;
     });
-
-    html += `
-                </tbody>
-            </table>
-        </div>
-    `;
-
-    this.routineDisplay.innerHTML = html;
-    this.printBtn.disabled = false;
-    this.downloadBtn.disabled = false;
 },
+
+    // Helper functions
+    getNextDayOfWeek: function(dayName) {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayIndex = days.indexOf(dayName);
+        if (dayIndex === -1) return null;
+
+        const today = new Date();
+        const result = new Date(today);
+        result.setDate(today.getDate() + ((dayIndex - today.getDay() + 7) % 7));
+        return result;
+    },
+
+    formatICalDate: function(date) {
+        return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z/, 'Z');
+    },
+
+    formatTimeLabel: function(label) {
+        // Always show full format (8:30-10:00) even on mobile
+        return label;
+    },
 
 // Add this helper function to format time labels for mobile
 formatTimeLabel: function(label) {
