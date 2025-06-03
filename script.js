@@ -1212,149 +1212,162 @@ const routineGenerator = {
         this.courseCodeInput.focus();
     },
     
-    generateRoutine: function() {
-        if (this.courses.length === 0) {
-            this.clearRoutineDisplay();
-            return;
-        }
+  // Update the generateRoutine function in the routineGenerator object
+generateRoutine: function() {
+    if (this.courses.length === 0) {
+        this.clearRoutineDisplay();
+        return;
+    }
 
-        const days = [
-            { name: 'Sunday', abbr: 'Sun' },
-            { name: 'Monday', abbr: 'Mon' },
-            { name: 'Tuesday', abbr: 'Tue' },
-            { name: 'Wednesday', abbr: 'Wed' },
-            { name: 'Thursday', abbr: 'Thu' }
-        ];
+    const days = [
+        { name: 'Sunday', abbr: 'Sun' },
+        { name: 'Monday', abbr: 'Mon' },
+        { name: 'Tuesday', abbr: 'Tue' },
+        { name: 'Wednesday', abbr: 'Wed' },
+        { name: 'Thursday', abbr: 'Thu' }
+    ];
 
-        const timeSlots = [
-            { start: '8:30', end: '10:00', label: '8:30-10:00' },
-            { start: '10:10', end: '11:40', label: '10:10-11:40' },
-            { start: '11:50', end: '13:20', label: '11:50-1:20' },
-            { start: '13:30', end: '15:00', label: '1:30-3:00' },
-            { start: '15:10', end: '16:40', label: '3:10-4:40' },
-            { start: '16:50', end: '18:20', label: '4:50-6:20' }
-        ];
+    // Adjust time slots for better mobile display
+    const timeSlots = [
+        { start: '8:30', end: '10:00', label: '8:30-10:00' },
+        { start: '10:10', end: '11:40', label: '10:10-11:40' },
+        { start: '11:50', end: '13:20', label: '11:50-1:20' },
+        { start: '13:30', end: '15:00', label: '1:30-3:00' },
+        { start: '15:10', end: '16:40', label: '3:10-4:40' },
+        { start: '16:50', end: '18:20', label: '4:50-6:20' }
+    ];
 
-        // Create a grid to represent the routine table
-        const routineGrid = days.map(() => {
-            return timeSlots.map(() => ({
-                courses: [],
-                rendered: false,
-                rowspan: 1
-            }));
-        });
+    // Create a grid to represent the routine table
+    const routineGrid = days.map(() => {
+        return timeSlots.map(() => ({
+            courses: [],
+            rendered: false,
+            rowspan: 1
+        }));
+    });
 
-        // First pass: Populate the grid with exact matches
-        this.courses.forEach(course => {
-            course.sessions.forEach((session, sessionIndex) => {
-                const dayIndex = days.findIndex(d => d.name === session.day);
-                if (dayIndex === -1) return;
+    // First pass: Populate the grid with exact matches
+    this.courses.forEach(course => {
+        course.sessions.forEach((session, sessionIndex) => {
+            const dayIndex = days.findIndex(d => d.name === session.day);
+            if (dayIndex === -1) return;
 
-                const sessionStart = this.timeToMinutes(session.time);
-                const sessionEnd = sessionStart + (session.duration * 60);
+            const sessionStart = this.timeToMinutes(session.time);
+            const sessionEnd = sessionStart + (session.duration * 60);
 
-                // Find the best matching time slot
-                let bestSlotIndex = -1;
-                let bestOverlap = 0;
-                
-                timeSlots.forEach((slot, slotIndex) => {
-                    const slotStart = this.timeToMinutes(slot.start);
-                    const slotEnd = this.timeToMinutes(slot.end);
-                    
-                    // Calculate overlap
-                    const overlapStart = Math.max(sessionStart, slotStart);
-                    const overlapEnd = Math.min(sessionEnd, slotEnd);
-                    const overlap = Math.max(0, overlapEnd - overlapStart);
-                    
-                    if (overlap > bestOverlap) {
-                        bestOverlap = overlap;
-                        bestSlotIndex = slotIndex;
-                    }
-                });
-
-                if (bestSlotIndex !== -1) {
-                    // Calculate how many slots this session spans
-                    const slotDuration = this.timeToMinutes(timeSlots[bestSlotIndex].end) - 
-                                        this.timeToMinutes(timeSlots[bestSlotIndex].start);
-                    const rowspan = Math.ceil(session.duration * 60 / slotDuration);
-                    
-                    routineGrid[dayIndex][bestSlotIndex].courses.push({
-                        course,
-                        session,
-                        sessionIndex
-                    });
-                    routineGrid[dayIndex][bestSlotIndex].rowspan = rowspan;
-                }
-            });
-        });
-
-        // Generate HTML from the grid
-        let html = `
-            <div class="routine-table-container">
-                <table class="routine-table">
-                    <thead>
-                        <tr>
-                            <th class="day-col">Day/Time</th>
-                            ${timeSlots.map(slot => `<th>${slot.label}</th>`).join('')}
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        days.forEach((day, dayIndex) => {
-            html += `<tr><td class="day-col">${day.abbr}</td>`;
+            // Find the best matching time slot
+            let bestSlotIndex = -1;
+            let bestOverlap = 0;
             
             timeSlots.forEach((slot, slotIndex) => {
-                const cell = routineGrid[dayIndex][slotIndex];
+                const slotStart = this.timeToMinutes(slot.start);
+                const slotEnd = this.timeToMinutes(slot.end);
                 
-                if (cell.rendered || cell.courses.length === 0) {
-                    html += cell.rendered ? '' : '<td></td>';
-                    return;
+                // Calculate overlap
+                const overlapStart = Math.max(sessionStart, slotStart);
+                const overlapEnd = Math.min(sessionEnd, slotEnd);
+                const overlap = Math.max(0, overlapEnd - overlapStart);
+                
+                if (overlap > bestOverlap) {
+                    bestOverlap = overlap;
+                    bestSlotIndex = slotIndex;
                 }
-
-                // Take the first course (we've already matched them properly)
-                const courseData = cell.courses[0];
-                if (!courseData) {
-                    html += '<td></td>';
-                    return;
-                }
-
-                const { course, session, sessionIndex } = courseData;
-                const isLab = course.type === 'lab';
-                const roomPrefix = isLab ? 'Lab' : 'R';
-                const sectionInfo = isLab ? 'Lab' : `Sec ${course.section}`;
-
-                // Mark subsequent slots as rendered
-                for (let i = 1; i < cell.rowspan; i++) {
-                    if (slotIndex + i < timeSlots.length) {
-                        routineGrid[dayIndex][slotIndex + i].rendered = true;
-                    }
-                }
-
-                html += `
-                    <td class="course-slot" rowspan="${cell.rowspan}">
-                        <div class="course-block ${isLab ? 'lab-block' : ''}">
-                            <div class="course-code">${course.code} <span class="course-section">${sectionInfo}</span></div>
-                            <div class="course-room">${roomPrefix}: ${course.room || 'N/A'}</div>
-                            <div class="course-faculty">${course.faculty || ''}</div>
-                        </div>
-                    </td>
-                `;
             });
-            
-            html += '</tr>';
+
+            if (bestSlotIndex !== -1) {
+                // Calculate how many slots this session spans
+                const slotDuration = this.timeToMinutes(timeSlots[bestSlotIndex].end) - 
+                                    this.timeToMinutes(timeSlots[bestSlotIndex].start);
+                const rowspan = Math.ceil(session.duration * 60 / slotDuration);
+                
+                routineGrid[dayIndex][bestSlotIndex].courses.push({
+                    course,
+                    session,
+                    sessionIndex
+                });
+                routineGrid[dayIndex][bestSlotIndex].rowspan = rowspan;
+            }
         });
+    });
 
-        html += `
-                    </tbody>
-                </table>
-            </div>
-        `;
+    // Generate HTML from the grid
+    let html = `
+        <div class="routine-table-container">
+            <table class="routine-table">
+                <thead>
+                    <tr>
+                        <th class="day-col">Day/Time</th>
+                        ${timeSlots.map(slot => `<th>${this.formatTimeLabel(slot.label)}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+    `;
 
-        this.routineDisplay.innerHTML = html;
-        this.printBtn.disabled = false;
-        this.downloadBtn.disabled = false;
-    },
+    days.forEach((day, dayIndex) => {
+        html += `<tr><td class="day-col">${day.abbr}</td>`;
+        
+        timeSlots.forEach((slot, slotIndex) => {
+            const cell = routineGrid[dayIndex][slotIndex];
+            
+            if (cell.rendered || cell.courses.length === 0) {
+                html += cell.rendered ? '' : '<td></td>';
+                return;
+            }
+
+            // Take the first course (we've already matched them properly)
+            const courseData = cell.courses[0];
+            if (!courseData) {
+                html += '<td></td>';
+                return;
+            }
+
+            const { course, session, sessionIndex } = courseData;
+            const isLab = course.type === 'lab';
+            const roomPrefix = isLab ? 'Lab' : 'R';
+            const sectionInfo = isLab ? 'Lab' : `Sec ${course.section}`;
+
+            // Mark subsequent slots as rendered
+            for (let i = 1; i < cell.rowspan; i++) {
+                if (slotIndex + i < timeSlots.length) {
+                    routineGrid[dayIndex][slotIndex + i].rendered = true;
+                }
+            }
+
+            html += `
+                <td class="course-slot" rowspan="${cell.rowspan}">
+                    <div class="course-block ${isLab ? 'lab-block' : ''}">
+                        <div class="course-code">${course.code} <span class="course-section">${sectionInfo}</span></div>
+                        <div class="course-room">${roomPrefix}: ${course.room || 'N/A'}</div>
+                        <div class="course-faculty">${course.faculty || ''}</div>
+                    </div>
+                </td>
+            `;
+        });
+        
+        html += '</tr>';
+    });
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    this.routineDisplay.innerHTML = html;
+    this.printBtn.disabled = false;
+    this.downloadBtn.disabled = false;
+},
+
+// Add this helper function to format time labels for mobile
+formatTimeLabel: function(label) {
+    if (window.innerWidth <= 768) {
+        // For mobile, use shorter time format
+        return label.replace(/(\d+:\d+)-(\d+:\d+)/, (match, start, end) => {
+            return `${start.replace(':','')}-${end.replace(':','')}`;
+        });
+    }
+    return label;
+},
     
     clearRoutineDisplay: function() {
         this.routineDisplay.innerHTML = `
@@ -1373,62 +1386,73 @@ const routineGenerator = {
         return hours * 60 + minutes;
     },
     
-    printRoutine: function() {
-        if (this.courses.length === 0) {
-            showToast('No routine to print', 'error');
-            return;
-        }
+printRoutine: function() {
+    if (this.courses.length === 0) {
+        showToast('No routine to print', 'error');
+        return;
+    }
 
-        const printContent = this.routineDisplay.innerHTML;
-        const printWindow = window.open('', '_blank');
-        
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-                <head>
-                    <title>Class Routine</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; }
-                        .routine-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                        .routine-table th, .routine-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-                        .routine-table th { background-color: #0056b3; color: white; }
-                        .routine-table .day-col { background-color: #f1f1f1; font-weight: bold; width: 100px; }
-                        .course-block { background-color: #e7f5ff; border-radius: 4px; padding: 5px; margin: 2px; }
-                        .lab-block { background-color: #fff3bf; }
-                        .course-code { font-weight: bold; font-size: 0.9rem; }
-                        .course-section {
-                            font-size: 0.7rem;
-                            background-color: #0056b3;
-                            color: white;
-                            padding: 1px 4px;
-                            border-radius: 3px;
-                        }
-                        .course-room { font-size: 0.8rem; }
-                        .course-faculty { font-size: 0.8rem; font-style: italic; }
-                        h1 { color: #0056b3; text-align: center; margin-bottom: 5px; }
-                        .print-header { margin-bottom: 20px; }
-                        .print-footer { text-align: center; margin-top: 20px; font-size: 0.8rem; color: #666; }
-                    </style>
-                </head>
-                <body>
-                    <div class="print-header">
-                        <h1>Class Routine and Office Hour, Spring 2025</h1>
-                    </div>
-                    ${printContent}
-                    <div class="print-footer">
-                        Generated on ${new Date().toLocaleDateString()}
-                    </div>
-                    <script>
-                        window.onload = function() {
-                            window.print();
+    const printContent = this.routineDisplay.innerHTML;
+    const printWindow = window.open('', '_blank');
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title>Class Routine</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    .routine-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                    .routine-table th, .routine-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+                    .routine-table th { background-color: #0056b3; color: white; }
+                    .routine-table .day-col { background-color: #f1f1f1; font-weight: bold; width: 80px; }
+                    .course-block { background-color: #e7f5ff; border-radius: 4px; padding: 5px; margin: 2px; }
+                    .lab-block { background-color: #fff3bf; }
+                    .course-code { font-weight: bold; font-size: 0.9rem; }
+                    .course-section {
+                        font-size: 0.7rem;
+                        background-color: #0056b3;
+                        color: white;
+                        padding: 1px 4px;
+                        border-radius: 3px;
+                    }
+                    .course-room { font-size: 0.8rem; }
+                    .course-faculty { font-size: 0.8rem; font-style: italic; }
+                    h1 { color: #0056b3; text-align: center; margin-bottom: 5px; }
+                    .print-header { margin-bottom: 20px; }
+                    .print-footer { text-align: center; margin-top: 20px; font-size: 0.8rem; color: #666; }
+                    
+                    @media print {
+                        body { padding: 10px; }
+                        .routine-table { font-size: 10pt; }
+                        .routine-table th, .routine-table td { padding: 4px; }
+                        .course-code { font-size: 0.8rem; }
+                        .course-room, .course-faculty { font-size: 0.7rem; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="print-header">
+                    <h1>Class Routine and Office Hour, Spring 2025</h1>
+                </div>
+                ${printContent}
+                <div class="print-footer">
+                    Generated on ${new Date().toLocaleDateString()}
+                </div>
+                <script>
+                    window.onload = function() {
+                        setTimeout(function() { 
+                            window.print(); 
                             setTimeout(function() { window.close(); }, 1000);
-                        };
-                    </script>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-    },
+                        }, 300);
+                    };
+                </script>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+},
     
     clearAll: function() {
         this.courses = [];

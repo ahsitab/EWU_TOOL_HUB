@@ -1134,6 +1134,65 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     width: 100%;
 }
 
+/* Add this to the existing styles.css */
+@media (max-width: 768px) {
+    .routine-table-container {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .routine-table {
+        min-width: 600px; /* Ensure table has minimum width */
+    }
+    
+    .routine-table th, 
+    .routine-table td {
+        min-width: 100px;
+        padding: 6px;
+        font-size: 0.85rem;
+    }
+    
+    .course-block {
+        padding: 6px;
+    }
+    
+    .course-block .course-code {
+        font-size: 0.8rem;
+    }
+    
+    .course-block .course-room,
+    .course-block .course-faculty {
+        font-size: 0.7rem;
+    }
+    
+    .course-block .course-section {
+        font-size: 0.6rem;
+        padding: 1px 3px;
+    }
+}
+
+@media (max-width: 480px) {
+    .routine-table {
+        min-width: 100%;
+    }
+    
+    .routine-table th, 
+    .routine-table td {
+        min-width: 80px;
+        padding: 4px;
+        font-size: 0.8rem;
+    }
+    
+    .routine-table .day-col {
+        width: 60px;
+    }
+    
+    .course-block {
+        padding: 4px;
+    }
+}
+
 /*git init
 git remote add origin https://github.com/ahsitab/EWU_TOOL_HUB.git
 git add .
