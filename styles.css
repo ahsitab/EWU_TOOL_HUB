@@ -758,22 +758,56 @@ footer {
 }
 
 /* Responsive Styles */
+/* Previous styles remain the same until media queries */
+
 @media (max-width: 768px) {
     .greeting-container {
-        padding: 30px 20px;
+        padding: 20px 15px;
+        margin: 15px;
+        width: calc(100% - 30px);
+    }
+    
+    .greeting-message h2 {
+        font-size: 2.2rem;
+        margin-bottom: 10px;
+    }
+    
+    .greeting-message p {
+        font-size: 1rem;
     }
     
     .tool-buttons {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .tool-btn {
+        padding: 20px;
+        aspect-ratio: unset;
+        flex-direction: row;
+        justify-content: flex-start;
+        text-align: left;
+    }
+    
+    .tool-btn i {
+        margin-right: 15px;
+        margin-bottom: 0;
+        font-size: 1.8rem;
     }
     
     nav ul {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
     }
     
     nav ul li {
-        margin-right: 0;
-        margin-bottom: 5px;
+        margin: 0 5px 5px 0;
+    }
+    
+    nav ul li a {
+        padding: 10px 5px;
+        font-size: 0.9rem;
     }
     
     .flow-controls {
@@ -789,26 +823,48 @@ footer {
         width: 100%;
     }
     
+    .routine-table {
+        font-size: 0.8rem;
+    }
+    
     .routine-table th, .routine-table td {
-        padding: 8px;
+        padding: 5px;
     }
     
     .header-right {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        flex-wrap: wrap;
         gap: 10px;
         margin-top: 10px;
+    }
+    
+    /* Form inputs */
+    input, select {
+        padding: 8px;
+        font-size: 0.9rem;
+    }
+    
+    /* Course rows in CGPA calculator */
+    .course-row, .retake-row {
+        flex-wrap: wrap;
+    }
+    
+    .course-row select, 
+    .course-row input,
+    .retake-row input {
+        min-width: calc(50% - 5px);
+        flex: none;
+    }
+    
+    .remove-course, .remove-retake {
+        width: 100%;
+        margin-top: 5px;
     }
 }
 
 @media (max-width: 480px) {
-    .tool-buttons {
-        grid-template-columns: 1fr;
-    }
-    
-    .tool-btn {
-        aspect-ratio: unset;
-        padding: 20px;
+    .greeting-message h2 {
+        font-size: 1.8rem;
     }
     
     .logo-container {
@@ -833,60 +889,98 @@ footer {
     .theme-toggle-container {
         position: static;
         margin-top: 15px;
+        margin-bottom: 15px;
     }
     
     .footer-content {
         grid-template-columns: 1fr;
     }
+    
+    /* Footer developer credit */
+    .footer-bottom {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .developer-credit {
+        font-size: 0.85rem;
+        color: var(--accent-color);
+    }
+    
+    /* Routine generator form */
+    .class-session {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    /* Tool sections */
+    .tool-section {
+        padding: 15px;
+    }
+    
+    h2 {
+        font-size: 1.3rem;
+    }
+    
+    /* Result boxes */
+    .result-box {
+        padding: 10px;
+    }
+    
+    /* Toast notifications */
+    .toast {
+        max-width: 90%;
+        right: 5%;
+        bottom: 10px;
+        font-size: 0.9rem;
+    }
 }
 
-/* Add these styles to your CSS file */
-#retakes-container {
-    margin: 15px 0;
-    padding: 15px;
-    border-radius: 5px;
-    border-left: 4px solid var(--warning-color);
-    background-color: rgba(253, 203, 110, 0.1);
+/* Add this at the end of the file */
+.developer-credit {
+    font-size: 0.9rem;
+    color: var(--accent-color);
+    margin-top: 5px;
+    text-align: center;
 }
 
-.retake-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
+/* Course flow charts mobile optimization */
+@media (max-width: 768px) {
+    .semester-flow {
+        font-size: 0.9rem;
+    }
+    
+    .semester-flow h4 {
+        font-size: 1rem;
+    }
+    
+    .course-list {
+        margin-left: 15px;
+    }
 }
 
-.retake-row input {
-    flex: 1;
-    min-width: 150px;
-}
-
-.remove-retake {
-    background-color: var(--danger-color);
-    color: white;
-    border: none;
-    width: 100px;
-    height: 40px;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: var(--transition);
-}
-
-.remove-retake:hover {
-    background-color: #c0392b;
-    transform: scale(1.05);
-}
-
-.download-btn {
-    background-color: var(--info-color);
-    color: var(--white);
-}
-
-.download-btn:hover {
-    background-color: #0a6ebd;
+/* Routine table mobile optimization */
+@media (max-width: 600px) {
+    .routine-table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    .routine-table th, 
+    .routine-table td {
+        min-width: 100px;
+    }
+    
+    .course-block .course-code {
+        font-size: 0.85rem;
+    }
+    
+    .course-block .course-room,
+    .course-block .course-faculty {
+        font-size: 0.75rem;
+    }
 }
 
 /*git init
