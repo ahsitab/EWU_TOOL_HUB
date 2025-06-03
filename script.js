@@ -1197,6 +1197,7 @@ const routineGenerator = {
         this.theorySessionsContainer.style.display = 'block';
         this.labSessionContainer.style.display = 'none';
         
+        // Set default values for theory sessions
         this.theoryDays[0].value = 'Sunday';
         this.theoryTimes[0].value = '08:00';
         this.theoryDurations[0].value = '1.5';
@@ -1205,6 +1206,7 @@ const routineGenerator = {
         this.theoryTimes[1].value = '09:30';
         this.theoryDurations[1].value = '1.5';
         
+        // Set default values for lab session
         this.labDay.value = 'Sunday';
         this.labTime.value = '08:00';
         this.labDuration.value = '1.5';
@@ -1212,7 +1214,6 @@ const routineGenerator = {
         this.courseCodeInput.focus();
     },
     
-  // Update the generateRoutine function in the routineGenerator object
     generateRoutine: function() {
         if (this.courses.length === 0) {
             this.clearRoutineDisplay();
@@ -1390,9 +1391,7 @@ const routineGenerator = {
                 }
 
                 html += `
-                    <td class="course-slot ${conflictClass}" rowspan="${cell.rowspan}" 
-                        data-day="${dayIndex}" data-slot="${slotIndex}" 
-                        data-course-id="${course.id}" draggable="true">
+                    <td class="course-slot ${conflictClass}" rowspan="${cell.rowspan}">
                         <div class="course-block ${isLab ? 'lab-block' : 'theory-block'}">
                             <div class="course-code">${course.code} <span class="course-section">${sectionInfo}</span></div>
                             <div class="course-room">${roomPrefix}: ${course.room || 'N/A'}</div>
@@ -1410,16 +1409,6 @@ const routineGenerator = {
                 </table>
             </div>
             
-            <!-- Export Buttons -->
-            <div class="export-buttons">
-                <button id="export-ical" class="btn export-btn">
-                    <i class="fas fa-calendar-plus"></i> Export to iCal
-                </button>
-                <button id="export-pdf" class="btn export-btn">
-                    <i class="fas fa-file-pdf"></i> Export as PDF
-                </button>
-            </div>
-            
             <!-- Conflict Warnings -->
             <div id="conflict-warnings"></div>
         `;
@@ -1427,13 +1416,6 @@ const routineGenerator = {
         this.routineDisplay.innerHTML = html;
         this.printBtn.disabled = false;
         this.downloadBtn.disabled = false;
-        
-        // Add drag and drop functionality
-        this.setupDragAndDrop();
-        
-        // Add export button event listeners
-        document.getElementById('export-ical')?.addEventListener('click', this.exportToICal.bind(this));
-        document.getElementById('export-pdf')?.addEventListener('click', this.exportToPDF.bind(this));
         
         // Show conflict warnings if any
         this.showConflictWarnings(routineGrid);
@@ -1621,337 +1603,6 @@ const routineGenerator = {
         warningsContainer.innerHTML = warningHTML;
     },
 
-    setupDragAndDrop: function() {
-        const slots = document.querySelectorAll('.course-slot');
-        let draggedSlot = null;
-
-        slots.forEach(slot => {
-            slot.addEventListener('dragstart', (e) => {
-                draggedSlot = slot;
-                e.dataTransfer.setData('text/plain', slot.dataset.courseId);
-                setTimeout(() => {
-                    slot.style.opacity = '0.4';
-                }, 0);
-            });
-
-            slot.addEventListener('dragend', () => {
-                slot.style.opacity = '1';
-                draggedSlot = null;
-            });
-
-            slot.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                if (draggedSlot !== slot) {
-                    slot.style.backgroundColor = 'rgba(0, 206, 201, 0.2)';
-                }
-            });
-
-            slot.addEventListener('dragleave', () => {
-                slot.style.backgroundColor = '';
-            });
-
-            slot.addEventListener('drop', (e) => {
-                e.preventDefault();
-                slot.style.backgroundColor = '';
-                
-                if (draggedSlot && draggedSlot !== slot) {
-                    const courseId = parseInt(e.dataTransfer.getData('text/plain'));
-                    const targetDay = parseInt(slot.dataset.day);
-                    const targetSlot = parseInt(slot.dataset.slot);
-                    
-                    // Find the course
-                    const course = this.courses.find(c => c.id === courseId);
-                    if (!course) return;
-                    
-                    // Update the course session time based on the new slot
-                    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
-                    const timeSlots = [
-                        { start: '8:30', end: '10:00' },
-                        { start: '10:10', end: '11:40' },
-                        { start: '11:50', end: '13:20' },
-                        { start: '13:30', end: '15:00' },
-                        { start: '15:10', end: '16:40' },
-                        { start: '16:50', end: '18:20' }
-                    ];
-                    
-                    // Update the course session
-                    course.sessions.forEach(session => {
-                        session.day = days[targetDay];
-                        session.time = timeSlots[targetSlot].start;
-                        
-                        // Calculate duration based on rowspan
-                        const rowspan = parseInt(slot.getAttribute('rowspan') || 1);
-                        const slotDuration = this.timeToMinutes(timeSlots[targetSlot].end) - 
-                                           this.timeToMinutes(timeSlots[targetSlot].start);
-                        session.duration = (rowspan * slotDuration) / 60;
-                    });
-                    
-                    // Regenerate the routine
-                    this.generateRoutine();
-                }
-            });
-        });
-    },
-
-    exportToICal: function() {
-        if (this.courses.length === 0) {
-            showToast('No courses to export', 'error');
-            return;
-        }
-
-        let icalContent = [
-            'BEGIN:VCALENDAR',
-            'VERSION:2.0',
-            'PRODID:-//EWU Tools Hub//Class Routine//EN',
-            'CALSCALE:GREGORIAN',
-            'METHOD:PUBLISH'
-        ];
-
-        // Add events for each course session
-        this.courses.forEach(course => {
-            course.sessions.forEach((session, index) => {
-                const startDate = this.getNextDayOfWeek(session.day);
-                if (!startDate) return;
-
-                const [hours, minutes] = session.time.split(':').map(Number);
-                startDate.setHours(hours, minutes, 0);
-
-                const endDate = new Date(startDate);
-                endDate.setHours(startDate.getHours() + Math.floor(session.duration));
-                endDate.setMinutes(startDate.getMinutes() + Math.round((session.duration % 1) * 60));
-
-                const eventId = `${course.id}-${index}-${Date.now()}`;
-                const now = new Date();
-                const isLab = course.type === 'lab';
-                const location = course.room ? (isLab ? `Lab ${course.room}` : `Room ${course.room}`) : 'TBA';
-
-                icalContent.push(
-                    'BEGIN:VEVENT',
-                    `UID:${eventId}@ewutoolshub.com`,
-                    `DTSTAMP:${this.formatICalDate(now)}`,
-                    `DTSTART:${this.formatICalDate(startDate)}`,
-                    `DTEND:${this.formatICalDate(endDate)}`,
-                    `SUMMARY:${course.code} ${isLab ? '(Lab)' : ''} - ${course.title}`,
-                    `DESCRIPTION:${course.faculty}\\nSection: ${course.section}`,
-                    `LOCATION:${location}`,
-                    'RRULE:FREQ=WEEKLY;COUNT=16', // Assuming 16 weeks in a semester
-                    'BEGIN:VALARM',
-                    'TRIGGER:-PT15M',
-                    'ACTION:DISPLAY',
-                    `DESCRIPTION:Reminder: ${course.code} class`,
-                    'END:VALARM',
-                    'END:VEVENT'
-                );
-            });
-        });
-
-        icalContent.push('END:VCALENDAR');
-
-        // Create download link
-        const blob = new Blob([icalContent.join('\r\n')], { type: 'text/calendar' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `EWU_Routine_${new Date().toISOString().slice(0, 10)}.ics`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        showToast('iCal file downloaded', 'success');
-    },
-
-exportToPDF: function() {
-    if (this.courses.length === 0) {
-        showToast('No routine to export', 'error');
-        return;
-    }
-
-    showToast('Preparing PDF... please wait', 'info');
-
-    const routineContainer = document.querySelector('.routine-table-container');
-    if (!routineContainer) return;
-
-    // Temporarily adjust styles for better PDF rendering
-    const originalWidth = routineContainer.style.width;
-    const originalOverflow = routineContainer.style.overflow;
-    
-    // Set explicit width and allow overflow for capture
-    routineContainer.style.width = 'fit-content';
-    routineContainer.style.overflow = 'visible';
-
-    // Hide elements we don't want in the PDF
-    const exportButtons = document.querySelector('.export-buttons');
-    const conflictWarnings = document.getElementById('conflict-warnings');
-    const originalExportDisplay = exportButtons?.style.display;
-    const originalWarningsDisplay = conflictWarnings?.style.display;
-    
-    if (exportButtons) exportButtons.style.display = 'none';
-    if (conflictWarnings) conflictWarnings.style.display = 'none';
-
-    // Calculate scaling based on table width
-    const tableWidth = routineContainer.scrollWidth;
-    const pageWidth = 297; // A4 width in mm (landscape)
-    const scale = Math.min(1, (pageWidth * 3.78) / tableWidth); // 1mm ≈ 3.78px
-
-    const options = {
-        scale: scale,
-        logging: false,
-        useCORS: true,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: routineContainer.scrollWidth,
-        windowHeight: routineContainer.scrollHeight,
-        backgroundColor: getComputedStyle(document.body).getPropertyValue('--card-bg')
-    };
-
-    html2canvas(routineContainer, options).then(canvas => {
-        // Restore original styles
-        routineContainer.style.width = originalWidth;
-        routineContainer.style.overflow = originalOverflow;
-        if (exportButtons) exportButtons.style.display = originalExportDisplay;
-        if (conflictWarnings) conflictWarnings.style.display = originalWarningsDisplay;
-
-        // Create PDF
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('l', 'mm', 'a4');
-        
-        // Calculate image dimensions to fit the PDF page
-        const imgWidth = pageWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        // Add image to PDF
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-        pdf.save(`EWU_Routine_${new Date().toISOString().slice(0, 10)}.pdf`);
-        
-        showToast('PDF downloaded successfully', 'success');
-    }).catch(err => {
-        console.error('Error generating PDF:', err);
-        showToast('Failed to generate PDF', 'error');
-        
-        // Restore original styles in case of error
-        routineContainer.style.width = originalWidth;
-        routineContainer.style.overflow = originalOverflow;
-        if (exportButtons) exportButtons.style.display = originalExportDisplay;
-        if (conflictWarnings) conflictWarnings.style.display = originalWarningsDisplay;
-    });
-},
-
-    // Helper functions
-    getNextDayOfWeek: function(dayName) {
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const dayIndex = days.indexOf(dayName);
-        if (dayIndex === -1) return null;
-
-        const today = new Date();
-        const result = new Date(today);
-        result.setDate(today.getDate() + ((dayIndex - today.getDay() + 7) % 7));
-        return result;
-    },
-
-    formatICalDate: function(date) {
-        return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z/, 'Z');
-    },
-
-    formatTimeLabel: function(label) {
-        // Always show full format (8:30-10:00) even on mobile
-        return label;
-    },
-
-
-    
-    clearRoutineDisplay: function() {
-        this.routineDisplay.innerHTML = `
-            <div class="placeholder">
-                <i class="fas fa-calendar"></i>
-                <p>Your generated routine will appear here</p>
-            </div>
-        `;
-        this.printBtn.disabled = true;
-        this.downloadBtn.disabled = true;
-    },
-
-    timeToMinutes: function(timeString) {
-        // Handle both "HH:MM" and "H:MM" formats
-        const [hours, minutes] = timeString.split(':').map(Number);
-        return hours * 60 + minutes;
-    },
-    
-printRoutine: function() {
-    if (this.courses.length === 0) {
-        showToast('No routine to print', 'error');
-        return;
-    }
-
-    const printContent = this.routineDisplay.innerHTML;
-    const printWindow = window.open('', '_blank');
-    
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-            <head>
-                <title>Class Routine</title>
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <style>
-                    body { font-family: Arial, sans-serif; }
-                    .routine-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                    .routine-table th, .routine-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-                    .routine-table th { background-color: #0056b3; color: white; }
-                    .routine-table .day-col { background-color: #f1f1f1; font-weight: bold; width: 80px; }
-                    .course-block { background-color: #e7f5ff; border-radius: 4px; padding: 5px; margin: 2px; }
-                    .lab-block { background-color: #fff3bf; }
-                    .course-code { font-weight: bold; font-size: 0.9rem; }
-                    .course-section {
-                        font-size: 0.7rem;
-                        background-color: #0056b3;
-                        color: white;
-                        padding: 1px 4px;
-                        border-radius: 3px;
-                    }
-                    .course-room { font-size: 0.8rem; }
-                    .course-faculty { font-size: 0.8rem; font-style: italic; }
-                    h1 { color: #0056b3; text-align: center; margin-bottom: 5px; }
-                    .print-header { margin-bottom: 20px; }
-                    .print-footer { text-align: center; margin-top: 20px; font-size: 0.8rem; color: #666; }
-                    
-                    @media print {
-                        body { padding: 10px; }
-                        .routine-table { font-size: 10pt; }
-                        .routine-table th, .routine-table td { padding: 4px; }
-                        .course-code { font-size: 0.8rem; }
-                        .course-room, .course-faculty { font-size: 0.7rem; }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="print-header">
-                    <h1>Class Routine and Office Hour, Spring 2025</h1>
-                </div>
-                ${printContent}
-                <div class="print-footer">
-                    Generated on ${new Date().toLocaleDateString()}
-                </div>
-                <script>
-                    window.onload = function() {
-                        setTimeout(function() { 
-                            window.print(); 
-                            setTimeout(function() { window.close(); }, 1000);
-                        }, 300);
-                    };
-                </script>
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
-},
-    
-    clearAll: function() {
-        this.courses = [];
-        this.renderCourseList();
-        this.clearRoutineDisplay();
-        showToast('All courses cleared', 'info');
-    },
-
     downloadRoutineAsImage: function() {
         if (this.courses.length === 0) {
             showToast('Please generate a routine first', 'error');
@@ -1977,10 +1628,11 @@ printRoutine: function() {
         
         // Temporarily hide the print button to avoid it appearing in the image
         const printBtn = document.getElementById('print-routine');
-        const originalDisplay = printBtn.style.display;
-        printBtn.style.display = 'none';
+        const originalDisplay = printBtn?.style.display;
+        if (printBtn) printBtn.style.display = 'none';
 
-        html2canvas(routineContainer, {
+        // Mobile-friendly options
+        const options = {
             scale: 2,
             logging: false,
             useCORS: true,
@@ -1990,11 +1642,13 @@ printRoutine: function() {
             windowWidth: routineContainer.scrollWidth,
             windowHeight: routineContainer.scrollHeight,
             backgroundColor: getComputedStyle(document.body).getPropertyValue('--card-bg')
-        }).then(canvas => {
+        };
+
+        html2canvas(routineContainer, options).then(canvas => {
             // Restore original styles
             routineContainer.style.overflow = originalOverflow;
             routineContainer.style.width = originalWidth;
-            printBtn.style.display = originalDisplay;
+            if (printBtn) printBtn.style.display = originalDisplay;
 
             // Create download link
             const link = document.createElement('a');
@@ -2002,16 +1656,111 @@ printRoutine: function() {
             link.href = canvas.toDataURL('image/png');
             link.click();
             
-            showToast('Routine downloaded as image', 'success');
+            showToast('Routine image downloaded!', 'success');
         }).catch(err => {
-            // Restore original styles
-            routineContainer.style.overflow = originalOverflow;
-            routineContainer.style.width = originalWidth;
-            printBtn.style.display = originalDisplay;
-            
             console.error('Error generating image:', err);
             showToast('Failed to generate image', 'error');
+            // Restore original styles in case of error
+            routineContainer.style.overflow = originalOverflow;
+            routineContainer.style.width = originalWidth;
+            if (printBtn) printBtn.style.display = originalDisplay;
         });
+    },
+    
+    printRoutine: function() {
+        if (this.courses.length === 0) {
+            showToast('No routine to print', 'error');
+            return;
+        }
+
+        const printContent = this.routineDisplay.innerHTML;
+        const printWindow = window.open('', '_blank');
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <title>Class Routine</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body { font-family: Arial, sans-serif; }
+                        .routine-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                        .routine-table th, .routine-table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+                        .routine-table th { background-color: #0056b3; color: white; }
+                        .routine-table .day-col { background-color: #f1f1f1; font-weight: bold; width: 80px; }
+                        .course-block { background-color: #e7f5ff; border-radius: 4px; padding: 5px; margin: 2px; }
+                        .lab-block { background-color: #fff3bf; }
+                        .course-code { font-weight: bold; font-size: 0.9rem; }
+                        .course-section {
+                            font-size: 0.7rem;
+                            background-color: #0056b3;
+                            color: white;
+                            padding: 1px 4px;
+                            border-radius: 3px;
+                        }
+                        .course-room { font-size: 0.8rem; }
+                        .course-faculty { font-size: 0.8rem; font-style: italic; }
+                        h1 { color: #0056b3; text-align: center; margin-bottom: 5px; }
+                        .print-header { margin-bottom: 20px; }
+                        .print-footer { text-align: center; margin-top: 20px; font-size: 0.8rem; color: #666; }
+                        
+                        @media print {
+                            body { padding: 10px; }
+                            .routine-table { font-size: 10pt; }
+                            .routine-table th, .routine-table td { padding: 4px; }
+                            .course-code { font-size: 0.8rem; }
+                            .course-room, .course-faculty { font-size: 0.7rem; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="print-header">
+                        <h1>Class Routine and Office Hour, Spring 2025</h1>
+                    </div>
+                    ${printContent}
+                    <div class="print-footer">
+                        Generated on ${new Date().toLocaleDateString()}
+                    </div>
+                    <script>
+                        window.onload = function() {
+                            setTimeout(function() { 
+                                window.print(); 
+                                setTimeout(function() { window.close(); }, 1000);
+                            }, 300);
+                        };
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+    },
+    
+    clearAll: function() {
+        this.courses = [];
+        this.renderCourseList();
+        this.clearRoutineDisplay();
+        showToast('All courses cleared', 'info');
+    },
+
+    clearRoutineDisplay: function() {
+        this.routineDisplay.innerHTML = `
+            <div class="placeholder">
+                <i class="fas fa-calendar"></i>
+                <p>Your generated routine will appear here</p>
+            </div>
+        `;
+        this.printBtn.disabled = true;
+        this.downloadBtn.disabled = true;
+    },
+
+    timeToMinutes: function(timeString) {
+        // Handle both "HH:MM" and "H:MM" formats
+        const [hours, minutes] = timeString.split(':').map(Number);
+        return hours * 60 + minutes;
+    },
+
+    formatTimeLabel: function(label) {
+        return label;
     }
 };
 
